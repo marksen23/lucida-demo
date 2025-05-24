@@ -1,0 +1,359 @@
+[
+  {
+    "data": {
+      "id": "node_0",
+      "label": "Appellative Moralisierung",
+      "content": "gegolten hat, hinausgehen zu wollen, weil wir meinen, wir müssen uns schützen. Das ist so quasi, wenn man jetzt sich um die Meinungsfreiheit von oben kümmert, ne, die Einschränkung der Meinungsfreiheit von oben, es gibt ja auch noch eine andere, über die wir auch reden sollten, sind das immer umblick gestrittigen Themen. Mhm. Das das ist im Grunde äh weil wir gerade über Gerard Baum gesprochen haben, das ist interessant, wenn du dir mal anschaust, wie da die Entwicklung ist. Also, du kannst es auch innerhalb der FDP kannst"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_0_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_0",
+      "target": "node_0_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_1",
+      "label": "Appellative Moralisierung",
+      "content": "sagen darf. Sie glauben doch nicht ernsthaft, dass der öffentliche Diskurs irgendwie eingeschränkt ist. Und bis vor ein paar Jahren hätte ich das auch immer in Bausch und Bogen von mir gewesen. Hätte immer gesagt, ja, nee, klar, natürlich darfst du alles sagen. Aber wenn ich mir mittlerweile teilweise anschaue, wie Diskussionen verlaufen, äh auch wenn du äh an unsere Folge über die AfD beispielsweise denkst, wenn ich z.B. sage äh, dass Kropala in Deutschland Funk im Interview sagt, äh, wir müssen"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_1_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_1",
+      "target": "node_1_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_2",
+      "label": "Persönliche Deutung",
+      "content": "sind, ne? Würde ich nicht z.B. zuzählen, würde sagen, ich habe konservative Anteile in mir und ich habe progressive Anteile in mir und in manchen geht mir der Fortschritt zu schnell und in anderen geht er mir zu langsam. Und ich glaube, so denken, wenn man die das in Gruppen einteilen würde, sogar die allermeisten Menschen, die würden sich also nicht sauber einem solchen Lager zurechnen, wie das in den USA der Fall ist. Deswegen diese diese zweier Polarisierung haben wir oft nicht. Z.B. wenn du dir die Bewertung äh des"
+    },
+    "classes": "persönliche-deutung"
+  },
+  {
+    "data": {
+      "id": "node_2_ziel",
+      "label": "Individuelle Position legitimieren"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_2",
+      "target": "node_2_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_3",
+      "label": "Appellative Moralisierung",
+      "content": "Schattenseite. Ich verstehe das Ansinn, dass man sagt, wir müssen Politiker besser vor Beleidigung schützen, aber auf der anderen Seite kommt dann am Ende raus, dass KI Systeme das Netz durchforsten und irgendwie gucken ist über den irgendwo da was gesagt worden und hier und so weiter. Und wenn bereits bei Schwachkopf die Beleidigungen anfangen, dann haben wir ein Problem mit der Meinungsfreiheit. Das darf nicht sein. Mhm. äh führt dann auch zu unglaublichen Klagewellen. Es gibt ähm ein Startup von Franziska Brandmann, das"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_3_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_3",
+      "target": "node_3_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_4",
+      "label": "Persönliche Deutung",
+      "content": "ist die Vorsitzende der Julis. Äh ich glaube, die suchen mit einer KI, ne, systematisch nach Beleidigungen im Netz. Das heißt, du kannst daraus ein Geschäftsmodell machen. Ich glaube über Robert Habck heißt es habe ich im letzt gefunden, er hätte bereits über 400 mal geklagt. Ich ja, ich glaube, du kommst bei du kommst da noch auf mehr, du kommst auf 800 und mehr. Weißt du eigentlich, wer die Spitzenreiterin ist? Ich glaube, Maria Agnis streck Zimmermann. Exakt. Exakt. Das hat mich überrascht. Ich will das gar nicht"
+    },
+    "classes": "persönliche-deutung"
+  },
+  {
+    "data": {
+      "id": "node_4_ziel",
+      "label": "Individuelle Position legitimieren"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_4",
+      "target": "node_4_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_5",
+      "label": "Persönliche Deutung",
+      "content": "gemacht. So und ähm auch da ne Paragraph 188, das Amtsgericht in Bamberg verurteilt ihn zu 7 Monaten Haft auf Bewährung und 1500 € Geldstrafe. Äh und ich erinnere mich, wie Andreas Rosenfeld, über dem wir hier schon paar mal gesprochen haben, äh der hat das kommentiert damals für die Kollegen der Welt und sagte, das ist ein Urteil wie aus einer Diktatur. Äh und sagte, für mich zeigt das deutlich, wie schlecht es um die Meinungsfreiheit am Ende von Phäers Amtszeit bestellt ist. Ich ich ich finde den Gedanken nachvollziehbar."
+    },
+    "classes": "persönliche-deutung"
+  },
+  {
+    "data": {
+      "id": "node_5_ziel",
+      "label": "Individuelle Position legitimieren"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_5",
+      "target": "node_5_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_6",
+      "label": "Persönliche Deutung",
+      "content": "du kannst Mao Plakate in der Fußgängerzone verteilen oder sowas alles, ne? Ich finde das gut und richtig, dass das so ist. Du darfst jeden politischen Schwachsinn von mir geben mit Ausnahme über das Dritte Reich. Und ich finde, dass das gut ist und dass es richtig ist und ähm dass wir da eine gute Tradition haben und die Jahrzehntel lang auch richtig mit umgegangen sind. Das muss eine liberale Gesellschaft aushalten. Eine liberale Gesellschaft muss aushalten, dass Leute wirresuch im im Netz vorbreiten. Ja, sie"
+    },
+    "classes": "persönliche-deutung"
+  },
+  {
+    "data": {
+      "id": "node_6_ziel",
+      "label": "Individuelle Position legitimieren"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_6",
+      "target": "node_6_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_7",
+      "label": "Persönliche Deutung",
+      "content": "muss aushalten, dass Leute Meinungen haben, die man völlig unmöglich findet. Ich meine, es ist nicht die Aufgabe anderer Menschen die gleiche Gesinnung und die gleichen politischen Ideen zu haben wie ich. Es macht natürlich einen Unterschied, wenn jemand unsere liberale Demokratie abschaffen will und wenn das ganz klipp und klar ist und wenn er zur Gewalt aufruft, da gibt es Grenzen. Aber diese Grenzen gab es schon immer. Die müssen jetzt nicht neu gezogen werden und die müssen auch nicht enger gezogen"
+    },
+    "classes": "persönliche-deutung"
+  },
+  {
+    "data": {
+      "id": "node_7_ziel",
+      "label": "Individuelle Position legitimieren"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_7",
+      "target": "node_7_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_8",
+      "label": "Appellative Moralisierung",
+      "content": "werden. Wir müssen nicht unsere Gesetzeslage verändern, ja, in der heutigen Situation eine Gesetzeslage, mit der wir 80 Jahre sehr sehr erfolgreich waren. Ja, das ist das ist das, was Kai Ambus auch sagt. Ich habe mich im äh Vorfeld für unser Gespräch mit ihm ausgetauscht. Ich diskutiere ab und zu mal mit dem, weil ich so ein interessanter Mann ist, äh der immer sehr kluge Dinge sagt und der z.B. gesagt, offener Diskurs, das ist das, was Demokratie weiterbringt. Wir müssen grundsätzlich alles diskutieren dürfen"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_8_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_8",
+      "target": "node_8_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_9",
+      "label": "Appellative Moralisierung",
+      "content": "und wir müssen vorsichtig sein auch mit Begriffen wie beispielsweise Verfassungsfeinden. Ja, er hat z.B. im Zusammenhang mit dem Berichte und der der Hochstufung des Verfassungsschutzes, ja, AfD auf etwas Interessantes hingewiesen. Er sagt, wir müssen uns doch die Frage stellen, ob es ausreicht, wenn irgendwelche braunen Typen auf der untersten Ebene oder mittleren Ebene dieser Partei z.B. komisches Zeug sagen. Ja, manche Sachen, die da in diesem Bericht jetzt z.B. drin stehen, die haben auch schon Helmut Schmidt und"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_9_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_9",
+      "target": "node_9_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_10",
+      "label": "Appellative Moralisierung",
+      "content": "Helmut Kohl benutzt. Man muss mal daran erinnern, darauf hat Kai Ambos hingewiesen, Peter Ramsauer hat im Zusammenhang mit begrannten mal von Ungeziefer gesprochen und ähnliche Äußerungen findest du jetzt auch bei der AfD und er sagt, es ist ein Unterschied, ob z.B. an Netaniao sagt, wir müssen Gaza säubern oder ob es irgendein Soldat sagt. Und analog bei der AfD, wenn Kropala etwas sagt, was eindeutig rechtsextrem ist oder wenn Weidel es sagt, dann kann man daraus schließen, dass die Partei in Toto sozusagen"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_10_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_10",
+      "target": "node_10_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_11",
+      "label": "Unklassifiziert",
+      "content": "gesichert rechtsextremistisch ist. Aber was ist, wenn es irgendjemand aus aus der zweiten, dritten, vierten Reihe sagt? Dann kann man die Frage stellen, ob man daraus schließen darf, dass die Partei grundsätzlich rechtsextremistisch ist. Und der sagt, das kann man unter Umständen nicht. Man kann den aber sehr wohl persönlich dafür bestrafen. Das ist eine ganz ganz andere Sache. Und er hat dann etwas herausgearbeitet, von dem ich denke, dass es der Punkt ist. Er sagt, im Kern geht es immer um eine ganz"
+    },
+    "classes": "unklassifiziert"
+  },
+  {
+    "data": {
+      "id": "node_11_ziel",
+      "label": "Wirkung unbestimmt"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_11",
+      "target": "node_11_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_12",
+      "label": "Unklassifiziert",
+      "content": "wird ein israelischer Historiker eingeladen, Benny Morris, ja, berühmt dafür, dass er in seinem Land einst das Schweigen über die Vertreibung der Palästinenser 1948 gebrochen hat. So, dann merken die von der Universitätsleitung, da gibt's Theater, da gibt's Proteste und da wird er einag kurzfristig ausgeladen mit der Begründung, er sei zu pro Israelisch und dann sagt man, da gibt es irgendwie Sicherheitsbedenken äh und deswegen kann man das irgendwie so nicht weitermachen. Und ich denke dann jedes"
+    },
+    "classes": "unklassifiziert"
+  },
+  {
+    "data": {
+      "id": "node_12_ziel",
+      "label": "Wirkung unbestimmt"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_12",
+      "target": "node_12_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_13",
+      "label": "Persönliche Deutung",
+      "content": "stehe dazu, ich stehe nicht zu dem, was der Redner da inhaltlich sagt, aber ich möchte, dass der hier sprechen kann.\" Ja, ich stehe vielleicht nicht zu dieser Kunst, ja, die die ihr alle ganz schlimm und unmöglich findet, aber ich möchte, dass diese Kunst hier gezeigt wird. Ja, weil ich sie für einen interessanten Debattenbeitrag in der Kunst halte und die Angst der Hierarchen ist das, was am Ende das hervorbringt, was ich in meinem Buch titelgebend Angstillstand nenne. Ja, im Zweifelsfall ist es doch immer"
+    },
+    "classes": "persönliche-deutung"
+  },
+  {
+    "data": {
+      "id": "node_13_ziel",
+      "label": "Individuelle Position legitimieren"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_13",
+      "target": "node_13_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_14",
+      "label": "Appellative Moralisierung",
+      "content": "weil wenn jeder einknickt, ja, dann geben wir diesem Druck immer weiter nach und der gefährdet am Ende unsere Liberale Demokrat. ist das, was ich meine, weiß du, lass die jungen Leute demonstrieren, lass sie streiten, lass sie lass sie verbal aufeinander losgehen, aber wir müssen doch den Rahmen dafür sicherstellen. Wir müssen klar machen, dass es okay ist, hart zu streiten und hart zu diskutieren. Das ist mein Punkt. Mir mir geht das immer zu schnell, wenn man sagt, da sind diese jungen linken Spinner und keine Ahnung"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_14_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_14",
+      "target": "node_14_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_15",
+      "label": "Appellative Moralisierung",
+      "content": "was oder rechte Irre und so. Mir geht das immer zu schnell. Ich denke mal, nee, nee, nee, wir müssen überlegen, welche Rolle wir dabei spielen. Äh und in dem Zusammenhang, Richard, und damit schließen wir auch nur noch ein kurzer Gedanke. Harari sagt in seinem letzten Buch Demokratie ist ein Gespräch und als es sozusagen noch keine richtige Informationstechnologie gab, gab es Demokratie nur in ganz kleinen Stadtsaten in Rom oder in Athen genau. Und erst mit dem Aufkommen moderner Informationstechnologie, Zeitung,"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_15_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_15",
+      "target": "node_15_ziel"
+    }
+  },
+  {
+    "data": {
+      "id": "node_16",
+      "label": "Appellative Moralisierung",
+      "content": "ist oder ob es heute Social Media ist, das ist im Grunde das, was äh Demokratie an vielen Stellen erst ermöglicht und wir müssen dieses Verhältnis, glaube ich, was geht und was nicht geht, immer wieder neu austarieren und ausverhandeln. Ja, und uns nicht in eine Richtung bewegen, dass wir immer mehr Angst vor Andersdenkenden haben, weil wir dann gleich glauben, dass unsere Demokratie den Bach runtergeht, weil sie kann auch den Bach dadurch runtergehen, dass wir zu viel Angst vor anders denkenden haben und dann anfangen äh"
+    },
+    "classes": "appellative-moralisierung"
+  },
+  {
+    "data": {
+      "id": "node_16_ziel",
+      "label": "Verhaltenssteuerung durch Normsetzung"
+    },
+    "classes": "ziel"
+  },
+  {
+    "data": {
+      "source": "node_16",
+      "target": "node_16_ziel"
+    }
+  }
+]
