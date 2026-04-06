@@ -1,12 +1,15 @@
 """
 ADAC Cost Estimator
-Primary: Parses ADAC Autokosten PDFs from the adac_pdfs/ directory (pdfplumber).
-Fallback: Heuristic cost model based on vehicle class / engine size.
+Priority chain:
+  1. Local PDF in adac_pdfs/ (pdfplumber)  ← best accuracy
+  2. Live scrape of adac.de                ← good accuracy, requires network
+  3. Heuristic table (ADAC-based)          ← always available
 
 PDF files should be placed in:   ../../adac_pdfs/  (relative to this file)
 or in an absolute path defined by env var ADAC_PDF_DIR.
 """
 
+import asyncio
 import logging
 import os
 import re
@@ -25,11 +28,26 @@ _PDF_DIR = Path(
 def estimate_monthly_costs(make: str, model: str, year: str = "") -> dict[str, Any]:
     """
     Return a dict with monthly cost categories.
-    Tries PDF first, then falls back to heuristic model.
+    Priority: PDF → live ADAC scrape → heuristic fallback.
     """
+    # 1. Try local PDF
     pdf_result = _try_pdf(make, model)
     if pdf_result:
         return pdf_result
+
+    # 2. Try live ADAC scrape (run sync wrapper around async scraper)
+    try:
+        from services.adac_scraper import scrape_adac_costs
+        loop = asyncio.new_event_loop()
+        live_result = loop.run_until_complete(scrape_adac_costs(make, model, year))
+        loop.close()
+        if live_result and live_result.get("total_monthly"):
+            logger.info("ADAC live scrape success for %s %s", make, model)
+            return live_result
+    except Exception as exc:
+        logger.debug("ADAC live scrape skipped: %s", exc)
+
+    # 3. Heuristic fallback
     return _heuristic(make, model, year)
 
 
