@@ -1,183 +1,429 @@
 """
 VIN Decoder Service
 ===================
-Strategy: fail-safe layered approach
-  1. WMI table   – instant, always succeeds, gives make + year
-  2. NHTSA vPIC  – free official API, enriches with model/trim/engine/etc.
-  Result = merge(WMI, NHTSA); WMI guarantees baseline, NHTSA adds detail.
+Priority chain:
+  1. freevindecoder.eu   – httpx scrape, EU-focused, best for German VINs
+  2. driving-tests.org   – httpx scrape, second free source
+  3. WMI table           – instant, offline, comprehensive EU coverage
+  4. NHTSA vPIC API      – httpx, US/international, last resort
+
+Results are cached 24 h (TTLCache, 500 slots).
+Every result carries a `confidence` float (0.0–1.0).
 """
 
 import asyncio
+import json
 import logging
+import re
+from threading import Lock
 from typing import Any
 
 import httpx
+from cachetools import TTLCache
 
 logger = logging.getLogger(__name__)
 
-_NHTSA_URL  = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/{}?format=json"
-_NHTSA_EXT  = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinextended/{}?format=json"
+# ─── Cache ────────────────────────────────────────────────────────────────────
+
+_cache: TTLCache = TTLCache(maxsize=500, ttl=86_400)   # 24 h
+_lock = Lock()
+
+
+def _cache_get(vin: str) -> dict | None:
+    with _lock:
+        return _cache.get(vin)
+
+
+def _cache_set(vin: str, value: dict) -> None:
+    with _lock:
+        _cache[vin] = value
+
+
+# ─── Shared HTTP Config ───────────────────────────────────────────────────────
+
+_TIMEOUT = httpx.Timeout(connect=5, read=9, write=5, pool=2)
+
+_BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.7,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br",
+    "DNT":             "1",
+}
+
+_NHTSA_URL = "https://vpic.nhtsa.dot.gov/api/vehicles/decodevinextended/{}?format=json"
 
 
 # ─── Public API ───────────────────────────────────────────────────────────────
 
 async def decode_vin(vin: str) -> dict[str, Any]:
     """
-    Always returns a dict. Guaranteed to contain at least 'make' and 'year'
-    for any VIN whose WMI prefix is in the table.
+    Decode a 17-char VIN.
+    Always returns a dict; guaranteed `make` + `year` for any WMI in the table.
     """
-    # Step 1: instant WMI baseline (no network, no failure)
-    base = _wmi_fallback(vin)
+    vin = vin.upper().strip()
 
-    # Step 2: try NHTSA – if it works, merge richer data on top
+    cached = _cache_get(vin)
+    if cached is not None:
+        logger.debug("VIN %s served from cache", vin)
+        return cached
+
+    result = await _decode_chain(vin)
+    _cache_set(vin, result)
+    logger.info(
+        "VIN %s → make=%r model=%r year=%r confidence=%.2f source=%r",
+        vin,
+        result.get("make"),
+        result.get("model"),
+        result.get("year"),
+        result.get("confidence", 0.0),
+        result.get("source"),
+    )
+    return result
+
+
+# ─── Decode Chain ─────────────────────────────────────────────────────────────
+
+async def _decode_chain(vin: str) -> dict:
+    # Step 1 – freevindecoder.eu
     try:
-        nhtsa = await asyncio.wait_for(_decode_nhtsa(vin), timeout=9)
-        if nhtsa.get("make"):
-            # NHTSA wins for every field it has; WMI fills gaps
-            merged = {**base, **{k: v for k, v in nhtsa.items() if v}}
-            logger.info("VIN %s → NHTSA: %s %s %s",
-                        vin, merged.get("make"), merged.get("model"), merged.get("year"))
-            return merged
-    except asyncio.TimeoutError:
-        logger.warning("NHTSA timeout for VIN %s – using WMI fallback", vin)
+        r = await asyncio.wait_for(_freevindecoder(vin), timeout=10)
+        if r.get("make"):
+            return {**r, "confidence": 0.90, "source": "freevindecoder.eu"}
     except Exception as exc:
-        logger.warning("NHTSA error for VIN %s: %s – using WMI fallback", vin, exc)
+        logger.warning("freevindecoder.eu failed for %s: %s", vin, exc)
 
-    logger.info("VIN %s → WMI: %s %s", vin, base.get("make"), base.get("year"))
-    return base
+    # Step 2 – driving-tests.org
+    try:
+        r = await asyncio.wait_for(_driving_tests(vin), timeout=10)
+        if r.get("make"):
+            return {**r, "confidence": 0.85, "source": "driving-tests.org"}
+    except Exception as exc:
+        logger.warning("driving-tests.org failed for %s: %s", vin, exc)
+
+    # Step 3 – WMI table (instant, offline)
+    wmi = _wmi_decode(vin)
+
+    # Step 4 – NHTSA to enrich WMI data (or as sole source for unknown WMI)
+    try:
+        nhtsa = await asyncio.wait_for(_nhtsa(vin), timeout=9)
+        if nhtsa.get("make"):
+            # NHTSA wins on fields it has; WMI fills any remaining gaps
+            merged = {**wmi, **{k: v for k, v in nhtsa.items() if v}}
+            merged["confidence"] = 0.80 if wmi.get("make") else 0.65
+            merged["source"] = "NHTSA+WMI" if wmi.get("make") else "NHTSA"
+            return merged
+    except Exception as exc:
+        logger.warning("NHTSA failed for %s: %s", vin, exc)
+
+    # WMI-only result
+    if wmi.get("make"):
+        return {**wmi, "confidence": 0.60, "source": "WMI"}
+
+    return {"confidence": 0.0, "source": "unknown"}
 
 
-# ─── NHTSA vPIC API ───────────────────────────────────────────────────────────
+# ─── Source 1: freevindecoder.eu ─────────────────────────────────────────────
 
-async def _decode_nhtsa(vin: str) -> dict:
+async def _freevindecoder(vin: str) -> dict:
     """
-    Call NHTSA extended VIN decoder.
-    Returns {} if VIN is unknown or response is malformed.
+    Fetch freevindecoder.eu results page and parse the HTML table / dl.
+    They render server-side HTML, so httpx works without a browser.
     """
-    url = _NHTSA_EXT.format(vin)
-    async with httpx.AsyncClient(timeout=8, follow_redirects=True) as client:
-        resp = await client.get(url, headers={"Accept": "application/json"})
+    urls_to_try = [
+        f"https://freevindecoder.eu/results/{vin}",
+        f"https://freevindecoder.eu/?vin={vin}",
+        f"https://freevindecoder.eu/vin/{vin}",
+    ]
+
+    async with httpx.AsyncClient(
+        timeout=_TIMEOUT,
+        follow_redirects=True,
+        headers={**_BROWSER_HEADERS, "Referer": "https://freevindecoder.eu/"},
+        http2=True,
+    ) as client:
+        for url in urls_to_try:
+            try:
+                resp = await client.get(url)
+                if resp.status_code == 200 and len(resp.text) > 500:
+                    result = _parse_generic_vin_html(resp.text, vin)
+                    if result.get("make"):
+                        return result
+            except Exception:
+                continue
+
+    return {}
+
+
+# ─── Source 2: driving-tests.org ─────────────────────────────────────────────
+
+async def _driving_tests(vin: str) -> dict:
+    url = f"https://driving-tests.org/vin-decoder/?vin={vin}"
+
+    async with httpx.AsyncClient(
+        timeout=_TIMEOUT,
+        follow_redirects=True,
+        headers={**_BROWSER_HEADERS, "Referer": "https://driving-tests.org/"},
+        http2=True,
+    ) as client:
+        resp = await client.get(url)
+
+    if resp.status_code != 200:
+        return {}
+
+    return _parse_generic_vin_html(resp.text, vin)
+
+
+# ─── HTML Parser (shared for multiple sites) ──────────────────────────────────
+
+_FIELD_MAP: dict[str, str] = {
+    "make":         ["make", "brand", "manufacturer", "marke", "hersteller"],
+    "model":        ["model", "modell"],
+    "year":         ["year", "model year", "baujahr", "modelljahr"],
+    "trim":         ["trim", "series", "ausstattung", "version"],
+    "engine":       ["engine", "motor", "displacement", "hubraum"],
+    "fuel_type":    ["fuel", "kraftstoff", "fuel type"],
+    "transmission": ["transmission", "getriebe", "gearbox"],
+    "body_style":   ["body", "karosserie", "body type", "body style"],
+    "drive_type":   ["drive", "antrieb", "drive type"],
+    "country":      ["country", "plant country", "land"],
+    "manufacturer": ["manufacturer name", "hersteller"],
+}
+
+
+def _match_field(label: str) -> str | None:
+    label = label.lower().strip()
+    for field, keywords in _FIELD_MAP.items():
+        if any(kw in label for kw in keywords):
+            return field
+    return None
+
+
+def _parse_generic_vin_html(html: str, vin: str) -> dict:
+    data: dict[str, str] = {}
+
+    # A) JSON-LD / application/json embedded in page
+    for m in re.finditer(
+        r'<script[^>]*type="application/(?:ld\+)?json"[^>]*>(.*?)</script>',
+        html, re.DOTALL | re.IGNORECASE,
+    ):
+        try:
+            obj = json.loads(m.group(1))
+            _extract_json_vin(obj, data)
+        except Exception:
+            pass
+    if data.get("make"):
+        return _clean(data)
+
+    # B) <table> rows with 2+ <td> cells
+    for row in re.finditer(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL | re.IGNORECASE):
+        cells = re.findall(r'<t[dh][^>]*>(.*?)</t[dh]>', row.group(1),
+                           re.DOTALL | re.IGNORECASE)
+        cells = [re.sub(r'<[^>]+>', '', c).strip() for c in cells]
+        if len(cells) >= 2 and cells[0] and cells[1]:
+            f = _match_field(cells[0])
+            if f and cells[1] not in ("-", "N/A", "n/a", ""):
+                data.setdefault(f, cells[1])
+
+    if data.get("make"):
+        return _clean(data)
+
+    # C) <dt>/<dd> definition lists
+    dts = re.findall(r'<dt[^>]*>(.*?)</dt>', html, re.DOTALL | re.IGNORECASE)
+    dds = re.findall(r'<dd[^>]*>(.*?)</dd>', html, re.DOTALL | re.IGNORECASE)
+    for dt_raw, dd_raw in zip(dts, dds):
+        label = re.sub(r'<[^>]+>', '', dt_raw).strip()
+        value = re.sub(r'<[^>]+>', '', dd_raw).strip()
+        f = _match_field(label)
+        if f and value and value not in ("-", "N/A", "n/a", ""):
+            data.setdefault(f, value)
+
+    if data.get("make"):
+        return _clean(data)
+
+    # D) key: value patterns in plain text
+    text = re.sub(r'<[^>]+>', ' ', html)
+    text = re.sub(r'\s+', ' ', text)
+    for m in re.finditer(r'([\w\s/()-]{3,30}):\s*([^\n;,<]{2,40})', text):
+        f = _match_field(m.group(1))
+        v = m.group(2).strip()
+        if f and v and v not in ("-", "N/A", "n/a"):
+            data.setdefault(f, v)
+
+    return _clean(data)
+
+
+def _extract_json_vin(obj: Any, data: dict) -> None:
+    """Recursively walk a JSON object looking for VIN field mappings."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            f = _match_field(str(k))
+            if f and isinstance(v, str) and v.strip():
+                data.setdefault(f, v.strip())
+            _extract_json_vin(v, data)
+    elif isinstance(obj, list):
+        for item in obj:
+            _extract_json_vin(item, data)
+
+
+def _clean(data: dict) -> dict:
+    """Normalise make to title-case; strip noise."""
+    if data.get("make"):
+        data["make"] = data["make"].title().replace("Ag", "AG").replace("Gmbh", "GmbH")
+    year = data.get("year", "")
+    m = re.search(r"\b(19[7-9]\d|20[0-3]\d)\b", str(year))
+    if m:
+        data["year"] = m.group(1)
+    return data
+
+
+# ─── Source 4: NHTSA vPIC ────────────────────────────────────────────────────
+
+async def _nhtsa(vin: str) -> dict:
+    url = _NHTSA_URL.format(vin)
+    async with httpx.AsyncClient(
+        timeout=_TIMEOUT,
+        follow_redirects=True,
+        headers={"Accept": "application/json"},
+    ) as client:
+        resp = await client.get(url)
         resp.raise_for_status()
         payload = resp.json()
 
-    _BAD = {"Not Applicable", "0", "null", "NULL", "None", ""}
-    kv: dict[str, str] = {}
-    for item in payload.get("Results", []):
-        var = (item.get("Variable") or "").strip()
-        val = (item.get("Value")    or "").strip()
-        if var and val and val not in _BAD:
-            kv[var] = val
+    _SKIP = {"Not Applicable", "0", "null", "NULL", "None", ""}
+    kv: dict[str, str] = {
+        (item.get("Variable") or "").strip(): (item.get("Value") or "").strip()
+        for item in payload.get("Results", [])
+        if (item.get("Value") or "").strip() not in _SKIP
+    }
 
-    make  = kv.get("Make",  "")
-    model = kv.get("Model", "")
-    year  = kv.get("Model Year", "")
-
+    make = kv.get("Make", "")
     if not make:
         return {}
 
-    displ     = kv.get("Displacement (L)", "")
-    cyl       = kv.get("Engine Number of Cylinders", "")
-    kw        = kv.get("Engine Power (kW)", "")
-    displ_str = f"{displ}L"  if displ else ""
-    cyl_str   = f"{cyl}Zyl" if cyl   else ""
-    engine_str = " ".join(filter(None, [displ_str, cyl_str]))
+    displ    = kv.get("Displacement (L)", "")
+    cyl      = kv.get("Engine Number of Cylinders", "")
+    eng      = " ".join(filter(None, [f"{displ}L" if displ else "", f"{cyl}Zyl" if cyl else ""]))
 
     return {
         "make":                make.title(),
-        "model":               model,
-        "year":                year,
+        "model":               kv.get("Model", ""),
+        "year":                kv.get("Model Year", ""),
         "trim":                kv.get("Trim", ""),
-        "series":              kv.get("Series", ""),
-        "engine":              engine_str,
-        "engine_displacement": displ_str,
+        "engine":              eng,
+        "engine_displacement": f"{displ}L" if displ else "",
         "cylinders":           cyl,
-        "power_kw":            kw,
         "fuel_type":           kv.get("Fuel Type - Primary", ""),
         "transmission":        kv.get("Transmission Style", ""),
         "drive_type":          kv.get("Drive Type", ""),
         "body_style":          kv.get("Body Class", ""),
-        "doors":               kv.get("Doors", ""),
+        "country":             kv.get("Plant Country", ""),
         "manufacturer":        kv.get("Manufacturer Name", ""),
-        "plant_country":       kv.get("Plant Country", ""),
-        "source":              "NHTSA vPIC",
     }
 
 
-# ─── WMI Fallback (offline, no network) ──────────────────────────────────────
+# ─── WMI Table (offline, instant) ─────────────────────────────────────────────
 
 _WMI: dict[str, str] = {
-    # Germany
+    # ── Germany ───────────────────────────────────────────────────────────────
     "WBA": "BMW",            "WBS": "BMW M",         "WBY": "BMW",
     "WVW": "Volkswagen",     "WV1": "Volkswagen",     "WV2": "Volkswagen",
     "WAU": "Audi",           "WUA": "Audi",           "WAP": "Audi",
     "WDD": "Mercedes-Benz",  "WDB": "Mercedes-Benz",  "WDC": "Mercedes-Benz",
     "WDF": "Mercedes-Benz",  "WMX": "Mercedes-Benz",  "WME": "Smart",
     "WP0": "Porsche",        "WP1": "Porsche",
-    "W0L": "Opel",           "W0V": "Opel",
-    "WMA": "MAN",
-    # Other EU
-    "VSS": "SEAT",           "VSE": "SEAT",
-    "TMB": "Škoda",
-    "TRU": "Audi",
-    "ZFF": "Ferrari",        "ZHW": "Lamborghini",    "ZAR": "Alfa Romeo",
-    "ZFA": "Fiat",           "ZCF": "Iveco",
+    "W0L": "Opel",           "W0V": "Opel",           "W0G": "Opel",
+    "WMA": "MAN",            "WJM": "Jeep EU",
+    "WF0": "Ford EU",        "WF0": "Ford EU",
+    "TRU": "Audi HU",        "TMA": "Audi HU",
+    # ── Austria / Czech / Hungary ─────────────────────────────────────────────
+    "TMB": "Škoda",          "TM8": "Škoda",
+    "VWV": "Volkswagen AT",
+    # ── Spain ─────────────────────────────────────────────────────────────────
+    "VSS": "SEAT",           "VSE": "SEAT",           "VNK": "Toyota ES",
+    "VS6": "Ford ES",        "VS7": "Chrysler ES",
+    # ── France ────────────────────────────────────────────────────────────────
     "VF1": "Renault",        "VF3": "Peugeot",        "VF7": "Citroën",
-    "VNE": "Renault",        "VNK": "Toyota EU",
+    "VNE": "Renault",        "VFA": "Renault",
+    "VF6": "Peugeot",        "VF8": "Citroën",
+    # ── Italy ─────────────────────────────────────────────────────────────────
+    "ZFF": "Ferrari",        "ZHW": "Lamborghini",    "ZAR": "Alfa Romeo",
+    "ZFA": "Fiat",           "ZCF": "Iveco",          "ZAA": "Lancia",
+    "ZDB": "De Tomaso",
+    # ── UK ────────────────────────────────────────────────────────────────────
     "SAL": "Land Rover",     "SAJ": "Jaguar",         "SAR": "Rover",
     "SCF": "Aston Martin",   "SCA": "Rolls-Royce",    "SCC": "Lotus",
-    "YV1": "Volvo",          "YV2": "Volvo",
-    "XTA": "Lada",
-    # North America
-    "1HG": "Honda",          "1FT": "Ford",           "1G1": "Chevrolet",
-    "1GC": "Chevrolet",      "1FA": "Ford",           "1J4": "Jeep",
-    "2HG": "Honda",          "3HG": "Honda",
-    # Japan / Korea
-    "JHM": "Honda",          "JN1": "Nissan",
+    "SDB": "Bentley",        "SEA": "Rolls-Royce",
+    # ── Sweden ────────────────────────────────────────────────────────────────
+    "YV1": "Volvo",          "YV2": "Volvo",          "YS3": "Saab",
+    # ── Netherlands / Belgium ─────────────────────────────────────────────────
+    "XLE": "DAF",
+    # ── Russia ────────────────────────────────────────────────────────────────
+    "XTA": "Lada",           "X9F": "GAZ",
+    # ── Japan ─────────────────────────────────────────────────────────────────
+    "JHM": "Honda",          "JN1": "Nissan",         "JN8": "Nissan",
     "JT2": "Toyota",         "JT3": "Toyota",         "JT6": "Lexus",
-    "JF1": "Subaru",         "JMB": "Mitsubishi",
-    "KMH": "Hyundai",        "KNA": "Kia",            "KNM": "Kia",
-    # China
-    "LVS": "Ford CN",        "LFV": "Volkswagen CN",
+    "JF1": "Subaru",         "JF2": "Subaru",
+    "JMB": "Mitsubishi",     "JM1": "Mazda",          "JM6": "Mazda",
+    "JS1": "Suzuki",         "JS2": "Suzuki",
+    # ── Korea ─────────────────────────────────────────────────────────────────
+    "KMH": "Hyundai",        "KMF": "Hyundai",
+    "KNA": "Kia",            "KNM": "Kia",
+    "KL1": "Daewoo",
+    # ── USA ───────────────────────────────────────────────────────────────────
+    "1G1": "Chevrolet",      "1GC": "Chevrolet",      "1GT": "GMC",
+    "1FA": "Ford",           "1FB": "Ford",           "1FT": "Ford",
+    "1HG": "Honda US",       "2HG": "Honda CA",       "3HG": "Honda MX",
+    "1J4": "Jeep",           "1B3": "Dodge",          "2C3": "Chrysler",
+    # ── China ─────────────────────────────────────────────────────────────────
+    "LFV": "Volkswagen CN",  "LVS": "Ford CN",        "LSG": "General Motors CN",
 }
 
-# Model hints for EU VINs where we know the model from WMI + position 4-8
-_WMI_MODEL_HINTS: dict[str, str] = {
-    # BMW position 4 encodes series
-    "WBA3": "3er",  "WBA4": "4er",  "WBA5": "5er",  "WBA6": "6er",
-    "WBA7": "7er",  "WBA8": "8er",  "WBA1": "1er",  "WBA2": "2er",
-    "WBY0": "i3",   "WBY1": "i8",   "WBY2": "iX",
-    # VW position 4-5 encodes model
-    "WVWZ": "Golf", "WVWA": "Golf", "WVWH": "Polo", "WVWJ": "Passat",
-    "WVWP": "Touareg",
+# Model hints: 4–5 VIN chars → model family
+_WMI_MODEL: dict[str, str] = {
+    # BMW
+    "WBA1": "1er",   "WBA2": "2er",   "WBA3": "3er",   "WBA4": "4er",
+    "WBA5": "5er",   "WBA6": "6er",   "WBA7": "7er",   "WBA8": "8er",
+    "WBY0": "i3",    "WBY1": "i8",    "WBYX": "X",
+    # VW
+    "WVWZ": "Golf",  "WVWA": "Golf",  "WVWH": "Polo",  "WVWJ": "Passat",
+    "WVWP": "Touareg","WVWT": "Tiguan",
     # Audi
-    "WAUA": "A4",  "WAUB": "A5",  "WAUC": "A6",  "WAUD": "A8",
-    "WAU2": "Q5",  "WAU3": "Q7",  "WAUE": "A3",
+    "WAUA": "A4",    "WAUB": "A5",    "WAUC": "A6",    "WAUD": "A8",
+    "WAUE": "A3",    "WAU2": "Q5",    "WAU3": "Q7",    "WAU7": "Q8",
     # Mercedes
-    "WDD1": "C-Klasse", "WDD2": "E-Klasse", "WDD2": "S-Klasse",
-    "WDC0": "GLC",      "WDC1": "GLE",
+    "WDD1": "C-Klasse","WDD2": "E-Klasse","WDD3": "S-Klasse",
+    "WDC0": "GLC",   "WDC1": "GLE",   "WDC2": "GLS",
     # Porsche
-    "WP0A": "911",  "WP0B": "Boxster", "WP0C": "Cayenne",
-    "WP0Z": "Panamera", "WP0Y": "Macan",
+    "WP0A": "911",   "WP0B": "Boxster","WP0C": "Cayenne",
+    "WP0Z": "Panamera","WP0Y": "Macan",
+    # Opel/Vauxhall
+    "W0LA": "Astra", "W0LE": "Corsa", "W0LG": "Insignia","W0LV": "Zafira",
 }
 
 
-def _wmi_fallback(vin: str) -> dict:
+def _wmi_decode(vin: str) -> dict:
     wmi3 = vin[:3].upper()
     make = _WMI.get(wmi3)
 
-    # Model hint from first 4-5 chars
-    model_hint = (_WMI_MODEL_HINTS.get(vin[:4].upper())
-                  or _WMI_MODEL_HINTS.get(vin[:5].upper())
-                  or "")
+    model = (
+        _WMI_MODEL.get(vin[:4].upper())
+        or _WMI_MODEL.get(vin[:5].upper())
+        or ""
+    )
 
     year_char = vin[9].upper() if len(vin) >= 10 else ""
     year = _year_from_char(year_char)
 
-    result: dict = {"source": "WMI"}
+    result: dict = {}
     if make:
         result["make"] = make
-    if model_hint:
-        result["model"] = model_hint
+    if model:
+        result["model"] = model
     if year:
         result["year"] = str(year)
     return result
@@ -192,4 +438,4 @@ def _year_from_char(c: str) -> int | None:
         "Y": 2030,
         "1": 2001, "2": 2002, "3": 2003, "4": 2004, "5": 2005,
         "6": 2006, "7": 2007, "8": 2008, "9": 2009,
-    }.get(c.upper())
+    }.get(c)
