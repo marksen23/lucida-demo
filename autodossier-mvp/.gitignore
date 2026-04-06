@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# ADAC PDFs (sensitive / large)
+adac_pdfs/*.pdf
+
+# Playwright cache
+.playwright/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoDossier – Kostenloses Fahrzeug-Gutachten</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans">
+
+  <!-- Header -->
+  <header class="border-b border-gray-800 py-5 px-6 flex items-center gap-3">
+    <div class="bg-blue-600 rounded-lg p-2">
+      <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M9 17a2 2 0 11-4 0 2 2 0 014 0zm10 0a2 2 0 11-4 0 2 2 0 014 0M3 7h2l2 5h10l2-5h2M5 12h14"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-xl font-bold tracking-tight">AutoDossier</h1>
+      <p class="text-xs text-gray-400">Kostenloser Fahrzeug-Report via VIN</p>
+    </div>
+    <span class="ml-auto text-xs bg-green-900 text-green-300 px-2 py-1 rounded-full font-medium">FREE</span>
+  </header>
+
+  <!-- Hero / Input -->
+  <main class="max-w-3xl mx-auto px-4 py-12">
+
+    <div class="text-center mb-10">
+      <h2 class="text-3xl font-extrabold mb-2">VIN eingeben &rarr; Report erhalten</h2>
+      <p class="text-gray-400 text-sm">Fahrzeugidentifikationsnummer (17 Zeichen) aus Fahrzeugschein oder Windschutzscheibe</p>
+    </div>
+
+    <!-- Input Card -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+      <label class="block text-sm font-medium text-gray-300 mb-2">Fahrzeug-Identifikationsnummer (VIN)</label>
+      <div class="flex gap-3">
+        <input
+          id="vinInput"
+          type="text"
+          maxlength="17"
+          placeholder="z.B. WBA3A5C50DF234567"
+          class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white
+                 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1
+                 focus:ring-blue-500 uppercase tracking-widest text-sm font-mono transition"
+        />
+        <button
+          id="analyzeBtn"
+          onclick="analyzeVin()"
+          class="bg-blue-600 hover:bg-blue-500 active:scale-95 transition text-white font-semibold
+                 px-6 py-3 rounded-xl whitespace-nowrap text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Analysieren
+        </button>
+      </div>
+      <p id="vinError" class="text-red-400 text-xs mt-2 hidden">Bitte eine gültige 17-stellige VIN eingeben.</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingCard" class="hidden bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center mb-6">
+      <div class="flex items-center justify-center gap-3 mb-4">
+        <div class="spinner w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <span class="text-gray-300 font-medium">Daten werden abgerufen…</span>
+      </div>
+      <div id="loadingSteps" class="text-left max-w-xs mx-auto space-y-2 text-sm text-gray-500">
+        <div id="step1" class="flex items-center gap-2">
+          <span class="step-icon">⏳</span> VIN dekodieren
+        </div>
+        <div id="step2" class="flex items-center gap-2">
+          <span class="step-icon">⏳</span> Technische Specs laden
+        </div>
+        <div id="step3" class="flex items-center gap-2">
+          <span class="step-icon">⏳</span> ADAC-Kosten auswerten
+        </div>
+        <div id="step4" class="flex items-center gap-2">
+          <span class="step-icon">⏳</span> Marktpreise prüfen
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorCard" class="hidden bg-red-950 border border-red-800 rounded-2xl p-6 mb-6 text-center">
+      <p class="text-red-300 font-medium mb-1">Analyse fehlgeschlagen</p>
+      <p id="errorMsg" class="text-red-400 text-sm"></p>
+      <button onclick="resetForm()" class="mt-4 text-xs text-red-300 underline hover:text-white">Erneut versuchen</button>
+    </div>
+
+    <!-- Result -->
+    <div id="resultSection" class="hidden space-y-5">
+
+      <!-- Vehicle Identity -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Fahrzeug</p>
+            <h3 id="vehicleTitle" class="text-2xl font-bold"></h3>
+            <p id="vehicleSubtitle" class="text-gray-400 text-sm mt-0.5"></p>
+          </div>
+          <!-- Ampel Badge -->
+          <div id="ampelBadge" class="flex flex-col items-center gap-1">
+            <div id="ampelDot" class="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"></div>
+            <span id="ampelLabel" class="text-xs font-medium"></span>
+          </div>
+        </div>
+
+        <!-- Key Stats Row -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-gray-800 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Baujahr</p>
+            <p id="statYear" class="font-semibold text-sm">–</p>
+          </div>
+          <div class="bg-gray-800 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Motor</p>
+            <p id="statEngine" class="font-semibold text-sm">–</p>
+          </div>
+          <div class="bg-gray-800 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Leistung</p>
+            <p id="statPower" class="font-semibold text-sm">–</p>
+          </div>
+          <div class="bg-gray-800 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Verbrauch</p>
+            <p id="statFuel" class="font-semibold text-sm">–</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Specs -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Technische Specs</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="specsGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Costs -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-1">Monatliche Kosten</h4>
+        <p class="text-xs text-gray-500 mb-4">Quelle: ADAC Autokosten (Schätzwerte)</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="costsGrid">
+          <!-- Populated by JS -->
+        </div>
+        <div class="mt-4 bg-blue-950 border border-blue-800 rounded-xl p-4 flex items-center justify-between">
+          <span class="text-sm text-blue-200 font-medium">Gesamt / Monat</span>
+          <span id="totalCost" class="text-xl font-bold text-blue-300">–</span>
+        </div>
+      </div>
+
+      <!-- Market Prices -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-1">Marktpreise</h4>
+        <p class="text-xs text-gray-500 mb-4">Aktuelle Vergleichsangebote (mobile.de / autoscout24.de)</p>
+        <div id="marketPriceRow" class="mb-4">
+          <div class="flex items-baseline gap-2">
+            <span class="text-3xl font-bold" id="avgPrice">–</span>
+            <span class="text-gray-400 text-sm">Ø Marktpreis</span>
+          </div>
+          <div class="flex gap-4 text-sm text-gray-400 mt-1">
+            <span>Min: <span id="minPrice" class="text-white font-medium">–</span></span>
+            <span>Max: <span id="maxPrice" class="text-white font-medium">–</span></span>
+          </div>
+        </div>
+        <div class="space-y-2" id="listingsList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Footer note -->
+      <p class="text-center text-xs text-gray-600 pb-6">
+        Alle Daten stammen aus öffentlich zugänglichen Quellen. Keine Gewähr für Vollständigkeit oder Aktualität.
+      </p>
+
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
