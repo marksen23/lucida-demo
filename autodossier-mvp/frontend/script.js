@@ -1,6 +1,6 @@
 // AutoDossier – Frontend Logic
 // Adjust BACKEND_URL to your Render.com deployment URL after deploy
-const BACKEND_URL = window.BACKEND_URL || "https://auto-dossier.onrender.com";
+const BACKEND_URL = window.BACKEND_URL || "https://lucida-demo.onrender.com";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
