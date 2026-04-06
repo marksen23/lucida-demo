@@ -41,6 +41,11 @@ async def get_vehicle_report(
     model = vin_data.get("model", "")
     year  = vin_data.get("year", "")
 
+    # If VIN decode returned nothing at all, log a warning but continue –
+    # market scraper will use whatever we have (even empty make → falls back to VIN search)
+    if not make:
+        logger.warning("VIN %s: no make resolved – report will be sparse", vin)
+
     # Steps 2–4: run in parallel (specs + market + costs)
     specs_task  = asyncio.create_task(scrape_specs(make, model, year))
     market_task = asyncio.create_task(scrape_market(make, model, year))
