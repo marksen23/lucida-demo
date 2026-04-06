@@ -15,4 +15,8 @@ services:
         value: "3.11"
       - key: ADAC_PDF_DIR
         value: /opt/render/project/src/adac_pdfs
+    disk:
+      name: adac-pdfs
+      mountPath: /opt/render/project/src/adac_pdfs
+      sizeGB: 1
     healthCheckPath: /health
