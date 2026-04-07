@@ -56,8 +56,8 @@ def estimate_monthly_costs(make: str, model: str, year: str = "") -> dict[str, A
 def _try_pdf(make: str, model: str) -> dict | None:
     try:
         import pdfplumber
-    except ImportError:
-        logger.info("pdfplumber not installed – skipping PDF parse")
+    except BaseException:
+        logger.info("pdfplumber unavailable – skipping PDF parse")
         return None
 
     if not _PDF_DIR.exists():

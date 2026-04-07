@@ -112,8 +112,12 @@ async def _decode_chain(vin: str) -> dict:
     try:
         nhtsa = await asyncio.wait_for(_nhtsa(vin), timeout=9)
         if nhtsa.get("make"):
-            # NHTSA wins on fields it has; WMI fills any remaining gaps
+            # NHTSA wins on most fields; WMI fills remaining gaps.
+            # But WMI year (from position-9 char, defaulting to 2010+ cycle)
+            # is more reliable than NHTSA for EU VINs, so preserve it.
             merged = {**wmi, **{k: v for k, v in nhtsa.items() if v}}
+            if wmi.get("year"):
+                merged["year"] = wmi["year"]
             merged["confidence"] = 0.80 if wmi.get("make") else 0.65
             merged["source"] = "NHTSA+WMI" if wmi.get("make") else "NHTSA"
             return _clean(merged)
@@ -347,15 +351,15 @@ _WMI: dict[str, str] = {
     "WDF": "Mercedes-Benz",  "WMX": "Mercedes-Benz",  "WME": "Smart",
     "WP0": "Porsche",        "WP1": "Porsche",
     "W0L": "Opel",           "W0V": "Opel",           "W0G": "Opel",
-    "WMA": "MAN",            "WJM": "Jeep EU",
+    "WMA": "MAN",            "WJM": "Jeep",
     "WF0": "Ford EU",        "WF0": "Ford EU",
-    "TRU": "Audi HU",        "TMA": "Audi HU",
+    "TRU": "Audi",           "TMA": "Audi",
     # ── Austria / Czech / Hungary ─────────────────────────────────────────────
     "TMB": "Škoda",          "TM8": "Škoda",
     "VWV": "Volkswagen AT",
     # ── Spain ─────────────────────────────────────────────────────────────────
-    "VSS": "SEAT",           "VSE": "SEAT",           "VNK": "Toyota ES",
-    "VS6": "Ford ES",        "VS7": "Chrysler ES",
+    "VSS": "SEAT",           "VSE": "SEAT",           "VNK": "Toyota",
+    "VS6": "Ford",           "VS7": "Chrysler",
     # ── France ────────────────────────────────────────────────────────────────
     "VF1": "Renault",        "VF3": "Peugeot",        "VF7": "Citroën",
     "VNE": "Renault",        "VFA": "Renault",
@@ -387,10 +391,10 @@ _WMI: dict[str, str] = {
     # ── USA ───────────────────────────────────────────────────────────────────
     "1G1": "Chevrolet",      "1GC": "Chevrolet",      "1GT": "GMC",
     "1FA": "Ford",           "1FB": "Ford",           "1FT": "Ford",
-    "1HG": "Honda US",       "2HG": "Honda CA",       "3HG": "Honda MX",
+    "1HG": "Honda",          "2HG": "Honda",          "3HG": "Honda",
     "1J4": "Jeep",           "1B3": "Dodge",          "2C3": "Chrysler",
     # ── China ─────────────────────────────────────────────────────────────────
-    "LFV": "Volkswagen CN",  "LVS": "Ford CN",        "LSG": "General Motors CN",
+    "LFV": "Volkswagen",     "LVS": "Ford",           "LSG": "General Motors",
 }
 
 # Model hints: 4–5 VIN chars → model family

@@ -136,9 +136,16 @@ def _parse_price(text: str) -> int | None:
 
 
 def _parse_km(text: str) -> str:
-    m = re.search(r"([\d.,]+)\s*km", str(text), re.I)
+    s = str(text).strip()
+    # With explicit "km" unit: "150.000 km", "150,000 km", "150000km"
+    m = re.search(r"([\d.,]+)\s*km", s, re.I)
     if m:
         return m.group(1).replace(".", "").replace(",", "")
+    # Plain numeric from JSON – accept 3-6 digits (1 000 – 999 999 km)
+    # Handles: "85000", "1.234" (DE thousands), "1,234" (US thousands)
+    stripped = s.replace(".", "").replace(",", "")
+    if re.fullmatch(r"\d{3,6}", stripped):
+        return stripped
     return ""
 
 
