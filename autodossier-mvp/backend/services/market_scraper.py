@@ -118,15 +118,17 @@ async def scrape_market(make: str, model: str, year: str = "") -> dict[str, Any]
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _parse_price(text: str) -> int | None:
-    """Parse German-formatted price like '12.500 €', '12500', '9.990,-'."""
+    """Parse German-formatted price like '12.500 €', '12500', '9.990,-', '45000 EUR'."""
+    # Strip currency labels and noise first
     t = re.sub(r"[\s\xa0\u202f]", "", str(text))
+    t = re.sub(r"(?i)(eur|chf|gbp)", "", t)
     # German format: 12.500 (dot as thousands separator)
     m = re.search(r"(\d{1,3}(?:\.\d{3})+)", t)
     if m:
         val = int(m.group(1).replace(".", ""))
         return val if 500 < val < 500_000 else None
-    # Plain 4-6 digit number
-    m = re.search(r"\b(\d{4,6})\b", t)
+    # Plain 4-6 digit number (no thousands sep)
+    m = re.search(r"(?<!\d)(\d{4,6})(?!\d)", t)
     if m:
         val = int(m.group(1))
         return val if 500 < val < 500_000 else None
@@ -202,91 +204,157 @@ def _extract_next_data(html: str) -> dict | None:
         return None
 
 
+def _resolve_price(obj: dict) -> int | None:
+    """
+    Try to extract a price from a dict that may contain it directly or
+    one level nested, e.g. {"price": {"amount": 22900}} or {"price": 22900}.
+    """
+    PRICE_KEYS = ("price", "grossPrice", "amount", "priceAmount",
+                  "finalPrice", "totalPrice", "formattedPrice", "value")
+    for k in PRICE_KEYS:
+        v = obj.get(k)
+        if v is None:
+            continue
+        if isinstance(v, (int, float)):
+            p = _parse_price(str(v))
+            if p:
+                return p
+        if isinstance(v, str):
+            p = _parse_price(v)
+            if p:
+                return p
+        if isinstance(v, dict):
+            # one level deeper
+            for kk in PRICE_KEYS:
+                vv = v.get(kk)
+                if vv is not None:
+                    p = _parse_price(str(vv))
+                    if p:
+                        return p
+    return None
+
+
 def _walk_listings(obj: Any, out: list[dict], source: str, base_url: str,
-                   year_fallback: str, depth: int = 0) -> None:
+                   year_fallback: str, depth: int = 0,
+                   fallback_title: str = "") -> None:
     """
     Recursively walk a JSON tree searching for objects that look like listings.
-    Heuristic: an object qualifies if it has at least a price-like field.
+    A listing dict must have a resolvable price AND at least one other
+    listing-like field (title, mileage, year, …).
     """
     if depth > 14 or len(out) >= 10:
         return
 
     if isinstance(obj, list):
         for item in obj:
-            _walk_listings(item, out, source, base_url, year_fallback, depth + 1)
+            _walk_listings(item, out, source, base_url, year_fallback, depth + 1, fallback_title)
         return
 
     if not isinstance(obj, dict):
         return
 
-    # ── Does this dict look like a listing? ──────────────────────────────────
-    PRICE_KEYS  = {"price", "grossPrice", "amount", "priceAmount",
-                   "finalPrice", "totalPrice", "formattedPrice"}
-    TITLE_KEYS  = {"title", "vehicleTitle", "headline", "name",
-                   "description", "vehicleName", "label"}
-    LINK_KEYS   = {"url", "href", "link", "relativeUrl", "path",
-                   "detailUrl", "vehicleUrl"}
-    KM_KEYS     = {"mileage", "kilometrage", "km", "odometer",
-                   "mileageValue", "mileageKm"}
-    YEAR_KEYS   = {"year", "firstRegistration", "registrationYear",
-                   "modelYear", "constructionYear"}
+    TITLE_KEYS = ("title", "vehicleTitle", "headline", "name",
+                  "description", "vehicleName", "label", "offerTitle")
+    LINK_KEYS  = ("url", "href", "link", "relativeUrl", "path",
+                  "detailUrl", "vehicleUrl", "listingUrl")
+    KM_KEYS    = ("mileage", "kilometrage", "km", "odometer",
+                  "mileageValue", "mileageKm", "kilometer")
+    YEAR_KEYS  = ("year", "firstRegistration", "registrationYear",
+                  "modelYear", "constructionYear", "firstRegYear")
 
-    price_val = next(
-        (obj[k] for k in PRICE_KEYS if k in obj and obj[k] is not None), None
-    )
+    price = _resolve_price(obj)
 
-    if price_val is not None:
-        price = _parse_price(str(price_val))
-        if price:
+    if price is not None:
+        # Only treat as listing if there is at least one other relevant key
+        has_meta = any(k in obj for k in (*TITLE_KEYS, *KM_KEYS, *YEAR_KEYS, *LINK_KEYS))
+        if has_meta:
             title_raw = str(next((obj[k] for k in TITLE_KEYS if k in obj), ""))
             km_raw    = str(next((obj[k] for k in KM_KEYS    if k in obj), ""))
             year_raw  = str(next((obj[k] for k in YEAR_KEYS  if k in obj), ""))
             link_raw  = next((obj[k] for k in LINK_KEYS  if k in obj), None)
 
-            full_text = f"{title_raw} {km_raw} {year_raw}"
-            km   = _parse_km(km_raw or full_text)
-            yr   = _parse_year(year_raw or full_text, year_fallback)
+            # Build title from nested vehicle/car sub-object when no direct title
+            if not title_raw.strip():
+                for sub_key in ("vehicle", "car", "offer", "listing", "article"):
+                    sub = obj.get(sub_key)
+                    if isinstance(sub, dict):
+                        mk = sub.get("make") or sub.get("brand") or sub.get("manufacturer") or ""
+                        mo = sub.get("model") or ""
+                        tr = sub.get("trim") or sub.get("version") or sub.get("variant") or ""
+                        candidate = " ".join(filter(None, [str(mk), str(mo), str(tr)])).strip()
+                        if candidate:
+                            title_raw = candidate
+                            # also grab km/year from same sub-obj if not found yet
+                            if not km_raw:
+                                km_raw = str(next((sub[k] for k in KM_KEYS if k in sub), ""))
+                            if not year_raw:
+                                year_raw = str(next((sub[k] for k in YEAR_KEYS if k in sub), ""))
+                            break
+
+            km = _parse_km(km_raw)
+            yr = _parse_year(year_raw or f"{title_raw} {km_raw}", year_fallback)
             href = str(link_raw) if link_raw else None
             if href and not href.startswith("http"):
                 href = base_url + href
 
             out.append({
-                "title":   (title_raw or "–")[:65],
+                "title":   (title_raw.strip() or fallback_title or "–")[:65],
                 "price":   price,
                 "mileage": km,
                 "year":    yr,
                 "source":  source,
                 "url":     href,
             })
-            return   # don't recurse into a listing object's sub-fields
+            return  # don't recurse further into a confirmed listing object
 
-    # Recurse into values
+    # Recurse into all values
     for v in obj.values():
-        _walk_listings(v, out, source, base_url, year_fallback, depth + 1)
+        _walk_listings(v, out, source, base_url, year_fallback, depth + 1, fallback_title)
 
 
-def _regex_price_listings(html: str, source: str, year_fallback: str) -> list[dict]:
+_BRAND_PAT = re.compile(
+    r'\b(BMW|Mercedes|Audi|Volkswagen|VW|Porsche|Opel|Ford|Toyota|Honda|'
+    r'Hyundai|Kia|Renault|Peugeot|Citro[eë]n|Seat|Skoda|Volvo|Nissan|'
+    r'Mazda|Mitsubishi|Suzuki|Fiat|Alfa Romeo|Jeep|Land Rover|Jaguar)\b',
+    re.I,
+)
+
+
+def _regex_price_listings(html: str, source: str, year_fallback: str,
+                          make: str = "", model: str = "") -> list[dict]:
     """
     Last-resort HTML regex extraction.
-    Finds price patterns and grabs text context around them.
+    Finds German price patterns and builds a title from nearby brand names.
     """
     listings = []
     strip_tags = re.compile(r'<[^>]+>')
-    price_pat  = re.compile(r'\b(\d{1,3}(?:\.\d{3})+)\s*€')
+    price_pat  = re.compile(r'(\d{1,3}(?:\.\d{3})+)\s*[€]')
 
-    for m in price_pat.finditer(html):
-        price = _parse_price(m.group(0))
+    for pm in price_pat.finditer(html):
+        price = _parse_price(pm.group(0))
         if not price:
             continue
 
-        start   = max(0, m.start() - 400)
-        snippet = strip_tags.sub(' ', html[start: m.end() + 80])
+        # Context window: 600 chars before, 100 after
+        start   = max(0, pm.start() - 600)
+        snippet = strip_tags.sub(' ', html[start: pm.end() + 100])
         snippet = re.sub(r'\s+', ' ', snippet).strip()
 
-        km   = _parse_km(snippet)
-        yr   = _parse_year(snippet, year_fallback)
-        words = [w for w in snippet.split() if len(w) > 3 and not re.match(r'^\d', w)]
-        title = " ".join(words[:8])[:65] or "–"
+        km  = _parse_km(snippet)
+        yr  = _parse_year(snippet, year_fallback)
+
+        # Try to extract a car brand + adjacent words as title
+        brand_m = _BRAND_PAT.search(snippet)
+        if brand_m:
+            tail  = snippet[brand_m.start():brand_m.start() + 80]
+            title = " ".join(tail.split()[:6])[:65]
+        elif make:
+            # Use the search term itself as title (at least informative)
+            title = f"{make} {model} {yr}".strip()[:65]
+        else:
+            words = [w for w in snippet.split()
+                     if len(w) > 3 and not re.match(r'^\d', w) and "€" not in w]
+            title = " ".join(words[:6])[:65] or "–"
 
         listings.append({
             "title":   title,
@@ -332,11 +400,12 @@ async def _mobile_de(make: str, model: str, year: str) -> dict:
     # Strategy A – __NEXT_DATA__ JSON
     nd = _extract_next_data(html)
     if nd:
-        _walk_listings(nd, listings, "mobile.de", "https://suchen.mobile.de", year)
+        _walk_listings(nd, listings, "mobile.de", "https://suchen.mobile.de", year,
+                       fallback_title=f"{make} {model}".strip())
 
     # Strategy B – HTML regex
     if not listings:
-        listings = _regex_price_listings(html, "mobile.de", year)
+        listings = _regex_price_listings(html, "mobile.de", year, make, model)
 
     # Deduplicate by price
     seen: set[int] = set()
@@ -400,11 +469,12 @@ async def _autoscout24(make: str, model: str, year: str) -> dict:
     # Strategy A – __NEXT_DATA__ JSON
     nd = _extract_next_data(html)
     if nd:
-        _walk_listings(nd, listings, "autoscout24.de", "https://www.autoscout24.de", year)
+        _walk_listings(nd, listings, "autoscout24.de", "https://www.autoscout24.de", year,
+                       fallback_title=f"{make} {model}".strip())
 
     # Strategy B – HTML regex
     if not listings:
-        listings = _regex_price_listings(html, "autoscout24.de", year)
+        listings = _regex_price_listings(html, "autoscout24.de", year, make, model)
 
     # Deduplicate
     seen: set[int] = set()

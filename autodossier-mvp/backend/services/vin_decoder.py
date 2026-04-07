@@ -116,7 +116,7 @@ async def _decode_chain(vin: str) -> dict:
             merged = {**wmi, **{k: v for k, v in nhtsa.items() if v}}
             merged["confidence"] = 0.80 if wmi.get("make") else 0.65
             merged["source"] = "NHTSA+WMI" if wmi.get("make") else "NHTSA"
-            return merged
+            return _clean(merged)
     except Exception as exc:
         logger.warning("NHTSA failed for %s: %s", vin, exc)
 
@@ -270,10 +270,20 @@ def _extract_json_vin(obj: Any, data: dict) -> None:
             _extract_json_vin(item, data)
 
 
+_MAKE_FIX = {
+    "Bmw": "BMW", "Vw": "VW", "Mg": "MG", "Lti": "LTI",
+    "Gmc": "GMC", "Bmwm": "BMW M", "Ag": "AG",
+}
+
 def _clean(data: dict) -> dict:
-    """Normalise make to title-case; strip noise."""
+    """Normalise make capitalisation and strip year noise."""
     if data.get("make"):
-        data["make"] = data["make"].title().replace("Ag", "AG").replace("Gmbh", "GmbH")
+        mk = data["make"].title()
+        # Fix known all-caps brands that title() mangles
+        for wrong, right in _MAKE_FIX.items():
+            mk = mk.replace(wrong, right)
+        mk = mk.replace(" Ag", " AG").replace(" Gmbh", " GmbH").replace("Benz", "Benz")
+        data["make"] = mk.strip()
     year = data.get("year", "")
     m = re.search(r"\b(19[7-9]\d|20[0-3]\d)\b", str(year))
     if m:
