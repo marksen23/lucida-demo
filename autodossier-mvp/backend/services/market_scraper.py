@@ -492,3 +492,14 @@ async def _autoscout24(make: str, model: str, year: str) -> dict:
             unique.append(l)
 
     return _aggregate(unique)
+
+
+# ─── Uniform Interface ────────────────────────────────────────────────────────
+
+async def get_market(ctx: Any) -> dict[str, Any]:
+    """Uniform interface: VehicleContext → market dict."""
+    return await scrape_market(
+        ctx.get("make", ""),
+        ctx.get("model", ""),
+        ctx.get("year", ""),
+    )

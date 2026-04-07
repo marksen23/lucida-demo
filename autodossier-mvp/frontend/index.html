@@ -100,7 +100,8 @@
           <!-- Ampel Badge -->
           <div id="ampelBadge" class="flex flex-col items-center gap-1">
             <div id="ampelDot" class="w-12 h-12 rounded-full flex items-center justify-center text-2xl font-bold shadow-lg"></div>
-            <span id="ampelLabel" class="text-xs font-medium"></span>
+            <span id="ampelScore" class="text-lg font-bold tabular-nums">–</span>
+            <span id="ampelLabel" class="text-xs font-medium text-center leading-tight max-w-[6rem]"></span>
           </div>
         </div>
 
@@ -129,6 +130,27 @@
       <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
         <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Technische Specs</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="specsGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Serienausstattung -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-1">Serienausstattung</h4>
+        <p class="text-xs text-gray-500 mb-4">Typische Serien­ausstattung dieses Modells</p>
+        <div class="flex flex-wrap gap-2" id="equipmentList">
+          <!-- Populated by JS -->
+        </div>
+        <div id="optionalEquipmentSection" class="mt-3 hidden">
+          <p class="text-xs text-gray-500 mb-2">Mögliche Extras:</p>
+          <div class="flex flex-wrap gap-2" id="optionalList"></div>
+        </div>
+      </div>
+
+      <!-- Score Breakdown -->
+      <div id="scoreBreakdownSection" class="bg-gray-900 border border-gray-800 rounded-2xl p-6 hidden">
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">Koeffizient-Score Breakdown</h4>
+        <div class="space-y-3" id="scoreBreakdownGrid">
           <!-- Populated by JS -->
         </div>
       </div>

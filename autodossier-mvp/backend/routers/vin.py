@@ -1,76 +1,86 @@
-"""VIN router – orchestrates all data sources and returns the merged report."""
+"""VIN Router – Phase 2
+
+Thin orchestration layer: validates VIN, delegates to report_builder,
+returns the complete structured report.
+
+GET /api/vin/{vin}
+  Optional query params:
+    asking_price: int  – Angefragter Kaufpreis in EUR (für Score-Berechnung)
+    mileage:      int  – Kilometerstand (für Score-Berechnung)
+"""
 
 import asyncio
 import logging
-from fastapi import APIRouter, HTTPException, Path
+import re
 
-from services.vin_decoder import decode_vin
-from services.specs_scraper import scrape_specs
-from services.market_scraper import scrape_market
-from services.adac_parser import estimate_monthly_costs
+from fastapi import APIRouter, HTTPException, Path, Query
+
+from services.report_builder import build_report
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 def _validate_vin(vin: str) -> str:
-    import re
     vin = vin.strip().upper()
     if not re.fullmatch(r"[A-HJ-NPR-Z0-9]{17}", vin):
-        raise HTTPException(status_code=422, detail="Ungültige VIN (17 alphanumerische Zeichen erforderlich)")
+        raise HTTPException(
+            status_code=422,
+            detail="Ungültige VIN (17 alphanumerische Zeichen, keine I/O/Q)",
+        )
     return vin
 
 
-@router.get("/vin/{vin}", summary="Fahrzeug-Report aus VIN generieren")
+@router.get("/vin/{vin}", summary="Vollständiger Fahrzeug-Report aus VIN")
 async def get_vehicle_report(
-    vin: str = Path(..., min_length=17, max_length=17, description="17-stellige Fahrzeug-ID"),
+    vin: str = Path(
+        ...,
+        min_length=17,
+        max_length=17,
+        description="17-stellige Fahrzeug-Identifikationsnummer (VIN/FIN)",
+    ),
+    asking_price: int | None = Query(
+        None,
+        ge=500,
+        le=500_000,
+        description="Angefragter Kaufpreis in EUR (optional, verbessert Score-Genauigkeit)",
+    ),
+    mileage: int | None = Query(
+        None,
+        ge=0,
+        le=999_999,
+        description="Kilometerstand in km (optional, verbessert Score-Genauigkeit)",
+    ),
 ):
+    """Generiert einen vollständigen Fahrzeug-Report:
+
+    - VIN-Dekodierung (Hersteller, Modell, Baujahr, Motor, …)
+    - Technische Specs (PS, Verbrauch, CO₂, …)
+    - Serienausstattung (Teoalida-Datenbank)
+    - Monatliche Kosten (ADAC-Schätzwerte)
+    - Marktpreise (mobile.de / autoscout24.de)
+    - Koeffizient-Score (0–100) mit Breakdown
+
+    Optional: `asking_price` und `mileage` für präzisere Score-Berechnung.
+    """
     vin = _validate_vin(vin)
-    logger.info("Report angefordert für VIN: %s", vin)
+    logger.info("Report für VIN %s (asking=%s mileage=%s)", vin, asking_price, mileage)
 
-    # Step 1: VIN decode (fast, blocking OK)
     try:
-        vin_data = await asyncio.wait_for(decode_vin(vin), timeout=15)
+        report = await asyncio.wait_for(
+            build_report(vin, asking_price=asking_price, mileage=mileage),
+            timeout=50,
+        )
     except asyncio.TimeoutError:
-        vin_data = {}
+        logger.error("Report-Timeout für VIN %s", vin)
+        raise HTTPException(
+            status_code=504,
+            detail="Analyse-Timeout – bitte erneut versuchen",
+        )
+    except HTTPException:
+        raise
     except Exception as exc:
-        logger.warning("VIN decode failed: %s", exc)
-        vin_data = {}
+        logger.exception("Report-Fehler für VIN %s: %s", vin, exc)
+        raise HTTPException(status_code=500, detail="Interner Fehler bei der Analyse")
 
-    make  = vin_data.get("make", "")
-    model = vin_data.get("model", "")
-    year  = vin_data.get("year", "")
-
-    # If VIN decode returned nothing at all, log a warning but continue –
-    # market scraper will use whatever we have (even empty make → falls back to VIN search)
-    if not make:
-        logger.warning("VIN %s: no make resolved – report will be sparse", vin)
-
-    # Steps 2–4: run in parallel (specs + market + costs)
-    specs_task  = asyncio.create_task(scrape_specs(make, model, year))
-    market_task = asyncio.create_task(scrape_market(make, model, year))
-    costs_task  = asyncio.create_task(
-        asyncio.to_thread(estimate_monthly_costs, make, model, year)
-    )
-
-    specs_result, market_result, costs_result = await asyncio.gather(
-        specs_task, market_task, costs_task, return_exceptions=True
-    )
-
-    if isinstance(specs_result, Exception):
-        logger.warning("Specs scraper error: %s", specs_result)
-        specs_result = {}
-    if isinstance(market_result, Exception):
-        logger.warning("Market scraper error: %s", market_result)
-        market_result = {}
-    if isinstance(costs_result, Exception):
-        logger.warning("ADAC parser error: %s", costs_result)
-        costs_result = {}
-
-    return {
-        "vin": vin,
-        "vin_data": vin_data,
-        "specs": specs_result,
-        "costs": costs_result,
-        "market": market_result,
-    }
+    return report

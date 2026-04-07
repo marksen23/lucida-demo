@@ -23,43 +23,70 @@ function setStep(n, state) {
   }
 }
 
-// ─── Ampel Logic ──────────────────────────────────────────────────────────────
-// Green  = price ≤ 110% of avg market  AND monthly costs reasonable
-// Yellow = price between 110–135% of avg market  OR costs elevated
-// Red    = price > 135% of avg market  OR costs very high
+// ─── Equipment Renderer ───────────────────────────────────────────────────────
 
-function computeAmpel(data) {
-  const avgMarket = data.market?.avg_price;
-  const totalMonthly = data.costs?.total_monthly;
-  let score = 0; // 0=green, 1=yellow, 2=red
+function renderEquipment(equipment) {
+  const listEl     = document.getElementById("equipmentList");
+  const optSection = document.getElementById("optionalEquipmentSection");
+  const optList    = document.getElementById("optionalList");
 
-  if (avgMarket && data.market?.listings?.length > 0) {
-    // Compare listing[0] price (the car being looked at) to avg
-    const firstPrice = data.market.listings[0]?.price;
-    if (firstPrice && avgMarket) {
-      const ratio = firstPrice / avgMarket;
-      if (ratio > 1.35) score = Math.max(score, 2);
-      else if (ratio > 1.10) score = Math.max(score, 1);
-    }
+  if (!equipment?.available) {
+    listEl.innerHTML = '<p class="text-gray-500 text-sm">Keine Ausstattungsdaten verfügbar</p>';
+    optSection.classList.add("hidden");
+    return;
   }
 
-  if (totalMonthly) {
-    if (totalMonthly > 700) score = Math.max(score, 2);
-    else if (totalMonthly > 450) score = Math.max(score, 1);
+  const standard = equipment.serienausstattung || [];
+  if (standard.length === 0) {
+    listEl.innerHTML = '<p class="text-gray-500 text-sm">Keine Ausstattungsdaten verfügbar</p>';
+  } else {
+    listEl.innerHTML = standard.map(item =>
+      `<span class="bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full">${item}</span>`
+    ).join("");
   }
 
-  const map = [
-    { cls: "ampel-green", icon: "✓", label: "Guter Deal", textCls: "text-green-400" },
-    { cls: "ampel-yellow", icon: "!", label: "Mit Vorsicht", textCls: "text-yellow-400" },
-    { cls: "ampel-red",   icon: "✕", label: "Teuer",        textCls: "text-red-400" },
-  ];
-  return map[score];
+  const optional = equipment.typisch_optional || [];
+  if (optional.length > 0) {
+    optSection.classList.remove("hidden");
+    optList.innerHTML = optional.map(item =>
+      `<span class="bg-gray-900 border border-gray-700 text-gray-400 text-xs px-2 py-1 rounded-full">${item}</span>`
+    ).join("");
+  } else {
+    optSection.classList.add("hidden");
+  }
+}
+
+// ─── Score Breakdown Renderer ─────────────────────────────────────────────────
+
+function renderScoreBreakdown(score) {
+  const section = document.getElementById("scoreBreakdownSection");
+  if (!score?.breakdown?.length) {
+    section.classList.add("hidden");
+    return;
+  }
+  section.classList.remove("hidden");
+
+  const grid = document.getElementById("scoreBreakdownGrid");
+  grid.innerHTML = score.breakdown.map(b => {
+    const pct = b.max > 0 ? Math.round(((b.max - b.abzug) / b.max) * 100) : 0;
+    const barColor = b.abzug === 0 ? "bg-green-500" : b.abzug < b.max * 0.5 ? "bg-yellow-500" : "bg-red-500";
+    return `
+      <div>
+        <div class="flex justify-between text-xs text-gray-400 mb-1">
+          <span>${b.dimension}</span>
+          <span class="text-gray-300">${b.text}</span>
+        </div>
+        <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+          <div class="h-full ${barColor} rounded-full transition-all" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }).join("");
 }
 
 // ─── Render Functions ─────────────────────────────────────────────────────────
 
 function renderResult(data) {
-  const vin_data = data.vin_data || {};
+  const vin_data = data.vehicle  || data.vin_data || {};  // Phase 2: "vehicle"
   const specs    = data.specs    || {};
   const costs    = data.costs    || {};
   const market   = data.market   || {};
@@ -81,14 +108,27 @@ function renderResult(data) {
   document.getElementById("statPower").textContent   = specs.power_ps ? specs.power_ps + " PS" : "–";
   document.getElementById("statFuel").textContent    = specs.fuel_consumption ? specs.fuel_consumption + " l/100km" : "–";
 
-  // Ampel
-  const ampel = computeAmpel(data);
+  // Ampel (from backend score)
+  const score = data.score || {};
+  const ampel = score.ampel || {};
+  const cssClass = ampel.css || "ampel-green";
   const dot   = document.getElementById("ampelDot");
-  dot.className = "w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shadow-lg " + ampel.cls;
-  dot.textContent = ampel.icon;
+  dot.className = "w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shadow-lg " + cssClass;
+  dot.textContent = ampel.icon || "?";
+  const scoreEl = document.getElementById("ampelScore");
+  if (scoreEl) {
+    scoreEl.textContent = score.wert !== undefined ? score.wert + " / 100" : "";
+    scoreEl.className = "text-sm font-bold tabular-nums " +
+      (cssClass === "ampel-green" ? "text-green-400" : cssClass === "ampel-yellow" ? "text-yellow-400" : "text-red-400");
+  }
   const lbl = document.getElementById("ampelLabel");
-  lbl.className = "text-xs font-medium " + ampel.textCls;
-  lbl.textContent = ampel.label;
+  lbl.className = "text-xs font-medium text-center leading-tight max-w-[6rem] " +
+    (cssClass === "ampel-green" ? "text-green-400" : cssClass === "ampel-yellow" ? "text-yellow-400" : "text-red-400");
+  lbl.textContent = ampel.label || "";
+
+  // Equipment
+  renderEquipment(data.equipment);
+  renderScoreBreakdown(data.score);
 
   // Specs grid
   const specFields = [

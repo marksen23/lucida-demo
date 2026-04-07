@@ -258,3 +258,18 @@ def _init():
 
 
 _init()
+
+
+# ─── Uniform Interface ────────────────────────────────────────────────────────
+
+def get_costs(ctx: Any) -> dict[str, Any]:
+    """Uniform interface: VehicleContext → costs dict (synchronous).
+
+    Note: The caller (report_builder / router) must wrap this in
+    asyncio.to_thread() since estimate_monthly_costs is synchronous.
+    """
+    return estimate_monthly_costs(
+        ctx.get("make", ""),
+        ctx.get("model", ""),
+        ctx.get("year", ""),
+    )

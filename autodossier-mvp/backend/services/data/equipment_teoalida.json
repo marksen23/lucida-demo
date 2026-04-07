@@ -1,0 +1,503 @@
+{
+  "_meta": {
+    "description": "Teoalida-Style Serienausstattungs-Daten für deutsche Markt-Modelle",
+    "source": "Teoalida Car Database Sample + Hersteller-Konfiguratoren",
+    "last_updated": "2025-01",
+    "models": 30
+  },
+
+  "bmw|3er": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Automatische 2-Zonen-Klimaanlage", "Navigationssystem (BMW Live)",
+      "Sitzheizung vorne", "PDC hinten", "Rückfahrkamera", "Bluetooth / USB-A",
+      "iDrive Touchscreen", "Sportlenkrad", "18-Zoll-Leichtmetallfelgen",
+      "Tempomat mit Bremsunterstützung", "Spurverlassenswarnung", "Kollisionswarnung"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / DSC (ESP)", "Dynamische Stabilitätskontrolle",
+      "Aktiver Fußgängerschutz", "Lane Departure Warning", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panorama-Glasdach", "Head-Up-Display", "Harman Kardon Sound", "M-Sportpaket",
+      "Adaptives Fahrwerk", "Leder Dakota", "Parking Assistant Plus", "Driving Assistant Professional"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "bmw|5er": {
+    "serienausstattung": [
+      "Voll-LED-Scheinwerfer", "4-Zonen-Klimaautomatik", "Navigationssystem Professional",
+      "Sitzheizung vorne und hinten", "PDC vorne + hinten", "Rückfahrkamera 360°",
+      "Softclose-Türen", "Ambientbeleuchtung", "19-Zoll-Leichtmetallfelgen",
+      "Driving Assistant", "Parkassistent", "Wireless Charging"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / DSC", "Aktive Motorhaube", "Lane Keeping Assistant",
+      "Cross-Traffic-Alert", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Bowers & Wilkins Sound", "Executive Drive Pro",
+      "M-Sportpaket", "Laserlicht", "Driving Assistant Professional"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "bmw|x3": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "2-Zonen-Klimaautomatik", "Navigationssystem",
+      "Sitzheizung vorne", "PDC vorne + hinten", "Rückfahrkamera",
+      "18-Zoll-Leichtmetallfelgen", "xDrive Allradantrieb", "Tempomat",
+      "Spurhalteassistent", "Notbremsassistent"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / DSC", "Bergabfahrkontrolle", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Head-Up-Display", "Harman Kardon", "Driving Assistant Professional",
+      "Komfortzugang", "Anhängerkupplung"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "bmw|1er": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "Navigations-Vorbereitung",
+      "PDC hinten", "Bluetooth", "17-Zoll-Leichtmetallfelgen",
+      "Spurverlassenswarnung", "Kollisionswarnung"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / DSC", "ISOFIX"],
+    "typisch_optional": [
+      "M-Sportpaket", "Navigationssystem", "Rückfahrkamera", "Sitzheizung", "Panoramadach"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "bmw|x5": {
+    "serienausstattung": [
+      "Voll-LED-Scheinwerfer", "4-Zonen-Klimaautomatik", "Navigationssystem Professional",
+      "Sitzheizung vorne + hinten", "PDC 360°", "Rückfahrkamera Panorama",
+      "Softclose-Türen", "20-Zoll-Leichtmetallfelgen", "xDrive Allrad",
+      "Luftfederung adaptiv", "Driving Assistant Professional"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / DSC", "Aktive Motorhaube", "Querverkehrswarnung", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panorama Sky Lounge Glasdach", "Bowers & Wilkins Diamond", "Executive Paket",
+      "Anhängerkupplung", "Wärme-Komfort-Paket", "Laserlicht"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "volkswagen|golf": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaanlage (1-Zonen)", "Discover-Navigation",
+      "DAB+-Radio", "Bluetooth", "App-Connect (Apple CarPlay / Android Auto)",
+      "16-Zoll-Leichtmetallfelgen", "Regensensor", "Tempomat",
+      "Front Assist (Notbremsassistent)", "Spurhalteassistent", "Müdigkeitserkennung"
+    ],
+    "sicherheit": [
+      "6 Airbags", "ABS / ESC", "Reifendruck-Kontrollsystem", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Navigationssystem Discover Pro", "Panorama-Schiebedach", "Sitzheizung",
+      "LED Matrix-Scheinwerfer", "Rückfahrkamera", "ACC (Abstandsregeltempomat)",
+      "Park Distance Control"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "volkswagen|passat": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "2-Zonen-Klimaautomatik", "Navigationssystem Discover Pro",
+      "Sitzheizung vorne", "PDC vorne + hinten", "Rückfahrkamera",
+      "17-Zoll-Leichtmetallfelgen", "Keyless Start", "ACC",
+      "Front Assist", "Spurhalteassistent", "Lane Change Assist"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / ESC", "Proaktiver Insassenschutz", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Leder", "Dynaudio Sound", "Anhängerkupplung",
+      "Head-Up-Display", "Fahrprofilauswahl", "IQ.Light Matrix-LED"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "volkswagen|tiguan": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "2-Zonen-Klimaautomatik", "Navigationssystem Discover Media",
+      "Rückfahrkamera", "PDC vorne + hinten", "17-Zoll-Leichtmetallfelgen",
+      "Front Assist", "Spurhalteassistent", "4Motion Allrad (je nach Ausstattung)"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / ESC", "Bergabfahrhilfe", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Sitzheizung", "ACC", "DCC (Fahrwerksregelung)", "IQ.Light"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "volkswagen|polo": {
+    "serienausstattung": [
+      "LED-Tagfahrlicht", "Klimaanlage", "DAB+", "App-Connect",
+      "Tempomat", "Front Assist", "15-Zoll-Leichtmetallfelgen"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "ISOFIX"],
+    "typisch_optional": [
+      "Navigationssystem", "Sitzheizung", "Rückfahrkamera", "ACC",
+      "LED-Scheinwerfer", "Panoramaschiebedach"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "audi|a3": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "MMI Navigation plus",
+      "Audi Smartphone Interface", "PDC hinten", "17-Zoll-Leichtmetallfelgen",
+      "Tempomat", "Spurhalteassistent", "Notbremsassistent"
+    ],
+    "sicherheit": [
+      "6 Airbags", "ABS / ESC", "Pre Sense Front", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Sitzheizung", "Rückfahrkamera", "Bang & Olufsen Sound",
+      "Matrix-LED", "Virtual Cockpit Plus", "Quattro Allrad", "ACC"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "audi|a4": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "3-Zonen-Klimaautomatik", "MMI Navigation plus",
+      "Audi Virtual Cockpit", "Sitzheizung vorne", "PDC vorne + hinten",
+      "Rückfahrkamera", "18-Zoll-Leichtmetallfelgen", "Audi Drive Select",
+      "ACC", "Spurhalteassistent", "Pre Sense City"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / ESC", "Pre Sense Front & Rear", "Seiten-Airbags", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Bang & Olufsen 3D Sound", "Matrix-LED-Scheinwerfer",
+      "Virtual Cockpit Plus", "Head-Up-Display", "Quattro Ultra", "S line Exterieur"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "audi|a6": {
+    "serienausstattung": [
+      "Matrix-LED-Scheinwerfer", "4-Zonen-Klimaautomatik", "MMI Navigation plus",
+      "Audi Virtual Cockpit Plus", "Sitzheizung vorne + hinten", "360°-Kamera",
+      "19-Zoll-Leichtmetallfelgen", "Mild-Hybrid-System", "ACC Stop & Go",
+      "Spurhalteassistent", "Pre Sense 360°"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / ESC", "Pre Sense Front & Rear", "Querverkehrwarner", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Bang & Olufsen 3D Sound", "Night Vision",
+      "Allroad Paket", "Head-Up-Display", "Massage-Vordersitze"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "audi|q5": {
+    "serienausstattung": [
+      "Matrix-LED-Scheinwerfer", "3-Zonen-Klimaautomatik", "MMI Navigation plus",
+      "Virtual Cockpit", "Sitzheizung vorne", "PDC 360°", "Rückfahrkamera",
+      "19-Zoll-Leichtmetallfelgen", "Quattro Allrad", "ACC", "Pre Sense"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / ESC", "Bergabfahrhilfe", "Querverkehrwarner", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Bang & Olufsen", "Head-Up-Display", "Massage-Vordersitze",
+      "Anhängerkupplung", "S line Sportpaket"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "mercedes-benz|a-klasse": {
+    "serienausstattung": [
+      "LED High Performance Scheinwerfer", "Klimaautomatik", "MBUX Infotainment",
+      "Apple CarPlay / Android Auto", "Rückfahrkamera", "16-Zoll-Leichtmetallfelgen",
+      "Tempomat", "Active Brake Assist", "Spurhalteassistent"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / ESP", "Active Brake Assist", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panorama-Schiebedach", "Sitzheizung", "Burmester Soundsystem",
+      "MBUX Augmented Reality Navigation", "AMG Styling", "Advanced Plus Paket"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "mercedes-benz|c-klasse": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "2-Zonen-Klimaautomatik", "MBUX Navigation",
+      "Sitzheizung vorne", "PDC vorne + hinten", "Rückfahrkamera",
+      "18-Zoll-Leichtmetallfelgen", "Active Brake Assist", "Spurhalteassistent",
+      "Lane Keeping Assist", "Attention Assist"
+    ],
+    "sicherheit": [
+      "9 Airbags", "ABS / ESP", "PRE-SAFE", "Active Brake Assist", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panorama-Schiebedach", "Burmester Surround Sound", "AMG-Paket",
+      "Head-Up-Display", "360°-Kamera", "Massage-Vordersitze",
+      "AIRMATIC Luftfederung"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "mercedes-benz|e-klasse": {
+    "serienausstattung": [
+      "Multibeam LED-Scheinwerfer", "4-Zonen-Klimaautomatik", "MBUX Navigation",
+      "Sitzheizung vorne + hinten", "360°-Kamera", "19-Zoll-Leichtmetallfelgen",
+      "Active Brake Assist", "Drive Pilot Assistent", "Spurhalteassistent",
+      "Aktiver Spurwechselassistent"
+    ],
+    "sicherheit": [
+      "9 Airbags", "ABS / ESP", "PRE-SAFE", "PRE-SAFE Impuls Side", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panorama-Schiebedach", "Burmester High-End 3D Soundsystem",
+      "AMG-Paket", "Head-Up-Display", "Massage-Sitze", "AIRMATIC"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "mercedes-benz|glc": {
+    "serienausstattung": [
+      "Multibeam LED-Scheinwerfer", "3-Zonen-Klimaautomatik", "MBUX Navigation",
+      "Sitzheizung vorne", "360°-Kamera", "19-Zoll-Leichtmetallfelgen",
+      "4MATIC Allradantrieb", "Active Brake Assist", "Spurhalteassistent"
+    ],
+    "sicherheit": [
+      "9 Airbags", "ABS / ESP", "PRE-SAFE", "Bergabfahrhilfe", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panorama-Schiebedach", "Burmester Sound", "AMG-Paket",
+      "Anhängerkupplung", "AIR BODY CONTROL"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "skoda|octavia": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "Amundsen Navigationssystem",
+      "SmartLink (CarPlay/Android Auto)", "Rückfahrkamera", "16-Zoll-Leichtmetallfelgen",
+      "Tempomat", "Front Assist", "Spurhalteassistent", "Müdigkeitserkennung"
+    ],
+    "sicherheit": [
+      "6 Airbags", "ABS / ESC", "Reifendruckkontrolle", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Canton Soundsystem", "ACC", "Sitzheizung",
+      "Virtual Cockpit", "Anhängerkupplung"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "seat|leon": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "Navigationssystem",
+      "Full Link (CarPlay/Android Auto)", "Rückfahrkamera", "17-Zoll-Leichtmetallfelgen",
+      "Front Assist", "Spurhalteassistent"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "ISOFIX"],
+    "typisch_optional": [
+      "Panoramadach", "Beats Audio", "ACC", "Sitzheizung",
+      "Parksensoren vorne", "LED Matrix"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "toyota|corolla": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "Toyota Touch 2 Navigation",
+      "Apple CarPlay / Android Auto", "16-Zoll-Leichtmetallfelgen",
+      "Toyota Safety Sense (Pre-Collision, Spurhalte, ACC)",
+      "Hybrid-Antrieb (Selbstladesystem)"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / VSC", "Toyota Safety Sense 2.0", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "JBL Soundsystem", "Sitzheizung", "Bi-Tone Lackierung"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "renault|megane": {
+    "serienausstattung": [
+      "LED Pure Vision Scheinwerfer", "Klimaautomatik", "Easy Link Navigation",
+      "Apple CarPlay / Android Auto", "Rückfahrkamera", "17-Zoll-Leichtmetallfelgen",
+      "Tempomat mit Geschwindigkeitsbegrenzer", "Notbremsassistent", "Totwinkelwarner"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "ISOFIX"],
+    "typisch_optional": [
+      "Bose Soundsystem", "Sitzheizung", "Einparkhilfe vorne",
+      "Wireless Charging", "Leder"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "volvo|v60": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "4-Zonen-Klimaautomatik", "Sensus Navigation",
+      "Apple CarPlay / Android Auto", "Sitzheizung vorne", "PDC 360°",
+      "Rückfahrkamera", "18-Zoll-Leichtmetallfelgen", "City Safety (AEB)",
+      "Pilot Assist (ACC + Spurhalte)", "Oncoming Lane Mitigation", "BLIS (Totwinkel)"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / DSTC", "City Safety", "Run-off Road Protection", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Bowers & Wilkins Sound", "360°-Surround View",
+      "Head-Up-Display", "Luftfederung", "Anhängerkupplung"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "volvo|xc40": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "2-Zonen-Klimaautomatik", "Sensus Navigation",
+      "Apple CarPlay / Android Auto", "Sitzheizung vorne", "PDC hinten",
+      "Rückfahrkamera", "18-Zoll-Leichtmetallfelgen", "City Safety",
+      "Pilot Assist", "BLIS"
+    ],
+    "sicherheit": [
+      "7 Airbags", "ABS / DSTC", "City Safety", "Run-off Road Protection", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Harman Kardon Sound", "360°-Kamera",
+      "Head-Up-Display", "Anhängerkupplung"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "volvo|xc60": {
+    "serienausstattung": [
+      "LED-Thor-Scheinwerfer", "4-Zonen-Klimaautomatik", "Sensus Navigation Pro",
+      "Apple CarPlay / Android Auto", "Sitzheizung vorne + hinten", "360°-Kamera",
+      "19-Zoll-Leichtmetallfelgen", "City Safety Advanced", "Pilot Assist Advanced",
+      "Kreuzungswarner", "Rückfahrwarner", "BLIS"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / DSTC", "City Safety", "Intersection Auto Brake", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Bowers & Wilkins Sound", "Luftfederung 4C",
+      "Head-Up-Display", "Massage-Sitze", "Anhängerkupplung"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  },
+
+  "ford|focus": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "SYNC 3 Navigation",
+      "Apple CarPlay / Android Auto", "Rückfahrkamera", "17-Zoll-Leichtmetallfelgen",
+      "Tempomat", "Pre-Collision Assist", "Lane Keeping Aid"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "ISOFIX"],
+    "typisch_optional": [
+      "B&O Play Sound", "Panoramadach", "Sitzheizung", "ACC",
+      "Einparkhilfe vorne + hinten", "Head-Up-Display"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "hyundai|tucson": {
+    "serienausstattung": [
+      "LED-Scheinwerfer mit LED-Tagfahrlicht", "2-Zonen-Klimaautomatik",
+      "Navigationssystem 10.25\"", "Apple CarPlay / Android Auto",
+      "Rückfahrkamera", "Parksensoren hinten", "17-Zoll-Leichtmetallfelgen",
+      "SmartSense (AEB, Spurhalte, ACC, BSW)"
+    ],
+    "sicherheit": [
+      "6 Airbags", "ABS / ESC", "Hyundai SmartSense", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Sitzheizung + -belüftung", "4WD-Allradantrieb",
+      "BOSE Premium Sound", "Head-Up-Display", "Lordose-Einstellung"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "hyundai|i30": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "Navigationssystem 8\"",
+      "Apple CarPlay / Android Auto", "PDC hinten", "16-Zoll-Leichtmetallfelgen",
+      "SmartSense Sicherheitspaket"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "ISOFIX"],
+    "typisch_optional": [
+      "Panoramadach", "Sitzheizung", "ACC", "Rückfahrkamera", "Bi-Colour Lackierung"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "kia|sportage": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "2-Zonen-Klimaautomatik", "12.3\" Navigationssystem",
+      "Apple CarPlay / Android Auto wireless", "Rückfahrkamera",
+      "17-Zoll-Leichtmetallfelgen", "Drive Wise Safety (AEB, ACC, LKA)"
+    ],
+    "sicherheit": [
+      "6 Airbags", "ABS / ESC", "Multi-Collision Brake", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Meridian Sound", "AWD Allradantrieb",
+      "Head-Up-Display", "Sitzheizung + -kühlung"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "peugeot|308": {
+    "serienausstattung": [
+      "LED-Scheinwerfer", "Klimaautomatik", "Peugeot i-Cockpit Navigation",
+      "Apple CarPlay / Android Auto", "Rückfahrkamera", "16-Zoll-Leichtmetallfelgen",
+      "Tempomat", "Notbremsassistent", "Spurhalteassistent"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "ISOFIX"],
+    "typisch_optional": [
+      "Panoramadach", "Focal Premium Sound", "Massagesitze", "ACC",
+      "Nachtsichtkamera", "Einparkhilfe Automatik"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "opel|astra": {
+    "serienausstattung": [
+      "LED IntelliLux Scheinwerfer", "Klimaautomatik", "AGR Ergonomiesitz",
+      "Apple CarPlay / Android Auto", "Rückfahrkamera", "17-Zoll-Leichtmetallfelgen",
+      "FlexConnect (modulare Ablagen)", "IntelliGrip Traktion", "Spurhalteassistent"
+    ],
+    "sicherheit": ["6 Airbags", "ABS / ESC", "Notbremssystem", "ISOFIX"],
+    "typisch_optional": [
+      "Panoramadach", "Harman Kardon Sound", "Sitzheizung", "ACC",
+      "Head-Up-Display", "360°-Kamera"
+    ],
+    "euro_norm": "Euro 6d"
+  },
+
+  "porsche|cayenne": {
+    "serienausstattung": [
+      "LED-Matrix Hauptscheinwerfer", "4-Zonen-Klimaautomatik", "PCM Navigation",
+      "Apple CarPlay / Android Auto", "Sitzheizung vorne + hinten",
+      "Surround View Kamera", "21-Zoll-Leichtmetallfelgen", "PASM Sportfahrwerk",
+      "Porsche Active Safe", "Lane Change Assist"
+    ],
+    "sicherheit": [
+      "8 Airbags", "ABS / PSM", "Porsche Active Safe", "ISOFIX"
+    ],
+    "typisch_optional": [
+      "Panoramadach", "Burmester 3D High-End Soundsystem", "Head-Up-Display",
+      "Night Vision Assistent", "Anhängerkupplung", "PTV Plus"
+    ],
+    "euro_norm": "Euro 6d-ISC"
+  }
+}
