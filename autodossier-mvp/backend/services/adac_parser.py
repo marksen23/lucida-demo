@@ -191,7 +191,8 @@ _COST_TABLE = {
     # (make patterns, base_monthly_costs)
     # Format: { fuel, insurance, tax, maintenance, depreciation }
     "luxury": {
-        "makes": ["bmw", "mercedes", "audi", "porsche", "lexus", "tesla"],
+        "makes": ["bmw", "mercedes", "audi", "porsche", "lexus", "tesla",
+                  "volvo", "jaguar", "land rover", "alfa romeo", "genesis"],
         "fuel_monthly": 195,
         "insurance_monthly": 130,
         "tax_monthly": 55,
@@ -200,7 +201,7 @@ _COST_TABLE = {
     },
     "mid": {
         "makes": ["volkswagen", "ford", "opel", "skoda", "seat", "toyota", "honda",
-                  "mazda", "hyundai", "kia", "volvo", "peugeot", "renault", "citroën"],
+                  "mazda", "hyundai", "kia", "peugeot", "renault", "citroën"],
         "fuel_monthly": 145,
         "insurance_monthly": 85,
         "tax_monthly": 28,

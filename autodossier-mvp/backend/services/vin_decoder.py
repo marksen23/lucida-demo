@@ -374,6 +374,7 @@ _WMI: dict[str, str] = {
     "SDB": "Bentley",        "SEA": "Rolls-Royce",
     # ── Sweden ────────────────────────────────────────────────────────────────
     "YV1": "Volvo",          "YV2": "Volvo",          "YS3": "Saab",
+    "LVY": "Volvo CN",
     # ── Netherlands / Belgium ─────────────────────────────────────────────────
     "XLE": "DAF",
     # ── Russia ────────────────────────────────────────────────────────────────
@@ -417,6 +418,9 @@ _WMI_MODEL: dict[str, str] = {
     "WP0Z": "Panamera","WP0Y": "Macan",
     # Opel/Vauxhall
     "W0LA": "Astra", "W0LE": "Corsa", "W0LG": "Insignia","W0LV": "Zafira",
+    # Volvo (position 4 = model line)
+    "YV1Z": "XC40",  "YV1X": "XC60",  "YV1LW": "XC90",
+    "YV1B": "V60",   "YV1A": "V90",   "YV1C": "S60",   "YV1D": "S90",
 }
 
 
