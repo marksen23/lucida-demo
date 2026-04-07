@@ -198,3 +198,40 @@ def test_compute_score_max_deduction():
     score = _compute_score(ctx, costs, market, asking_price=20_000, mileage=300_000)
     assert score["wert"] == 0
     assert score["ampel"]["klasse"] == "rot"
+
+
+# ─── Score-Grenzwerte ──────────────────────────────────────────────────────────
+
+def test_score_age_boundary_exactly_3_years():
+    """age=3 is in the ≤5 bucket → ded=5."""
+    from datetime import date
+    year = str(date.today().year - 3)
+    ded, _ = _score_age(year)
+    assert ded == 5
+
+def test_score_age_boundary_exactly_6_years():
+    """age=6 is in the ≤9 bucket → ded=10."""
+    from datetime import date
+    year = str(date.today().year - 6)
+    ded, _ = _score_age(year)
+    assert ded == 10
+
+def test_score_price_boundary_90_percent():
+    """ratio = 0.90 hits the ≤0.90 boundary → ded=0."""
+    ded, _ = _score_price(9_000, {"avg_price": 10_000})   # exactly 90%
+    assert ded == 0
+
+def test_score_price_boundary_91_percent():
+    """ratio = 0.91 falls into the 90–105% bucket → ded=5."""
+    ded, _ = _score_price(9_100, {"avg_price": 10_000})   # 91%
+    assert ded == 5
+
+def test_score_mileage_boundary_40000():
+    """40 000 km hits the ≤40 000 boundary → ded=0."""
+    ded, _ = _score_mileage(40_000)
+    assert ded == 0
+
+def test_score_mileage_boundary_40001():
+    """40 001 km falls into the 40 001–90 000 bucket → ded=4."""
+    ded, _ = _score_mileage(40_001)
+    assert ded == 4
