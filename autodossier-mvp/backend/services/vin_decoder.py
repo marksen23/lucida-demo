@@ -118,6 +118,10 @@ async def _decode_chain(vin: str) -> dict:
             merged = {**wmi, **{k: v for k, v in nhtsa.items() if v}}
             if wmi.get("year"):
                 merged["year"] = wmi["year"]
+            # Keep WMI origin_country (manufacturer HQ, from VIN pos 0)
+            # separately from NHTSA's plant_country (assembly location)
+            if wmi.get("origin_country"):
+                merged["origin_country"] = wmi["origin_country"]
             merged["confidence"] = 0.80 if wmi.get("make") else 0.65
             merged["source"] = "NHTSA+WMI" if wmi.get("make") else "NHTSA"
             return _clean(merged)
@@ -418,9 +422,34 @@ _WMI_MODEL: dict[str, str] = {
     "WP0Z": "Panamera","WP0Y": "Macan",
     # Opel/Vauxhall
     "W0LA": "Astra", "W0LE": "Corsa", "W0LG": "Insignia","W0LV": "Zafira",
-    # Volvo (position 4 = model line)
-    "YV1Z": "XC40",  "YV1X": "XC60",  "YV1LW": "XC90",
-    "YV1B": "V60",   "YV1A": "V90",   "YV1C": "S60",   "YV1D": "S90",
+    # Volvo (position 4 = model series)
+    "YV1Z": "V60",   "YV1B": "V60",   "YV1F": "XC60",  "YV1L": "XC90",
+    "YV1A": "V90",   "YV1C": "S60",   "YV1D": "S90",   "YV1X": "XC40",
+}
+
+
+# VIN position 0 → manufacturer's home country (ISO 3166-1 alpha-2 style labels)
+_VIN_ORIGIN: dict[str, str] = {
+    "1": "USA", "2": "Kanada", "3": "Mexiko",
+    "4": "USA", "5": "USA",
+    "6": "Australien", "7": "Neuseeland",
+    "8": "Argentinien", "9": "Brasilien",
+    "A": "Südafrika",
+    "J": "Japan",
+    "K": "Südkorea",
+    "L": "China",
+    "M": "Indien",
+    "N": "Niederlande",
+    "P": "Philippinen",
+    "R": "Taiwan",
+    "S": "Großbritannien",
+    "T": "Tschechien",        # TMB = Škoda CZ
+    "U": "Rumänien",
+    "V": "Frankreich",
+    "W": "Deutschland",
+    "X": "Russland",
+    "Y": "Schweden",
+    "Z": "Italien",
 }
 
 
@@ -437,6 +466,8 @@ def _wmi_decode(vin: str) -> dict:
     year_char = vin[9].upper() if len(vin) >= 10 else ""
     year = _year_from_char(year_char)
 
+    origin = _VIN_ORIGIN.get(vin[0].upper(), "") if vin else ""
+
     result: dict = {}
     if make:
         result["make"] = make
@@ -444,6 +475,8 @@ def _wmi_decode(vin: str) -> dict:
         result["model"] = model
     if year:
         result["year"] = str(year)
+    if origin:
+        result["origin_country"] = origin
     return result
 
 
