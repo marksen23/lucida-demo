@@ -3,7 +3,7 @@ VIN Decoder Service
 Scrapes freevindecoder.eu with Playwright (fallback: driving-tests.org).
 Returns a dict with make, model, year, engine, trim, fuel_type, transmission.
 """
-
+import httpx
 import asyncio
 import logging
 import re
@@ -11,153 +11,33 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
-# Try to import Playwright; degrade gracefully if not installed
-try:
-    from playwright.async_api import async_playwright, TimeoutError as PWTimeout
-    PLAYWRIGHT_AVAILABLE = True
-except ImportError:
-    PLAYWRIGHT_AVAILABLE = False
-    logger.warning("Playwright not installed – VIN decoder will return empty results")
-
-
-# ─── Public API ───────────────────────────────────────────────────────────────
-
-async def decode_vin(vin: str) -> dict[str, Any]:
-    """Return decoded VIN fields. Always returns a dict (never raises)."""
-    if not PLAYWRIGHT_AVAILABLE:
-        return {}
+async def decode_vin(vin: str) -> dict:
+    url = f"https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}?format=json"
+    
     try:
-        result = await _decode_freevindecoder(vin)
-        if result.get("make"):
-            return result
-        # Fallback
-        return await _decode_driving_tests(vin)
-    except Exception as exc:
-        logger.error("VIN decode error: %s", exc)
-        return {}
-
-
-# ─── Source 1: freevindecoder.eu ─────────────────────────────────────────────
-
-async def _decode_freevindecoder(vin: str) -> dict:
-    url = f"https://freevindecoder.eu/results/{vin}"
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        ctx = await browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/122.0.0.0 Safari/537.36"
-            ),
-            viewport={"width": 1280, "height": 800},
-        )
-        page = await ctx.new_page()
-        try:
-            await page.goto(url, wait_until="domcontentloaded", timeout=20_000)
-            await asyncio.sleep(2)  # polite delay
-
-            data: dict = {}
-
-            # freevindecoder.eu renders a table with label/value rows
-            rows = await page.query_selector_all("table tr, .vin-result tr, .result-table tr")
-            for row in rows:
-                cells = await row.query_selector_all("td, th")
-                if len(cells) >= 2:
-                    label = (await cells[0].inner_text()).strip().lower()
-                    value = (await cells[1].inner_text()).strip()
-                    if not value or value in ("-", "n/a", ""):
-                        continue
-                    if "make" in label or "brand" in label or "manufacturer" in label:
-                        data["make"] = value.title()
-                    elif "model" in label:
-                        data["model"] = value
-                    elif "year" in label or "model year" in label:
-                        data["year"] = value
-                    elif "engine" in label:
-                        data["engine"] = value
-                    elif "trim" in label or "series" in label:
-                        data["trim"] = value
-                    elif "fuel" in label:
-                        data["fuel_type"] = value
-                    elif "transmission" in label:
-                        data["transmission"] = value
-                    elif "body" in label:
-                        data["body_style"] = value
-
-            # Also try definition list pattern
-            if not data.get("make"):
-                dts = await page.query_selector_all("dt")
-                dds = await page.query_selector_all("dd")
-                for dt, dd in zip(dts, dds):
-                    label = (await dt.inner_text()).strip().lower()
-                    value = (await dd.inner_text()).strip()
-                    if not value or value in ("-", "n/a"):
-                        continue
-                    if "make" in label or "brand" in label:
-                        data["make"] = value.title()
-                    elif "model" in label:
-                        data["model"] = value
-                    elif "year" in label:
-                        data["year"] = value
-
-            return data
-        except PWTimeout:
-            logger.warning("freevindecoder.eu timed out for VIN %s", vin)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, timeout=10.0)
+            data = response.json()
+            
+            results = data.get("Results", [])[0]
+            
+            make = results.get("Make", "").title()
+            model = results.get("Model", "")
+            year = results.get("ModelYear", "")
+            
+            if make:
+                return {
+                    "make": make,
+                    "model": model,
+                    "year": year,
+                    "engine": results.get("DisplacementL", "") + "L",
+                    "fuel_type": results.get("FuelTypePrimary", ""),
+                    "body_style": results.get("BodyClass", "")
+                }
             return {}
-        finally:
-            await browser.close()
-
-
-# ─── Source 2: driving-tests.org (fallback) ──────────────────────────────────
-
-async def _decode_driving_tests(vin: str) -> dict:
-    url = f"https://driving-tests.org/vin-decoder/?vin={vin}"
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        ctx = await browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/122.0.0.0 Safari/537.36"
-            ),
-            viewport={"width": 1280, "height": 900},
-        )
-        page = await ctx.new_page()
-        try:
-            await page.goto(url, wait_until="networkidle", timeout=25_000)
-            await asyncio.sleep(2)
-
-            data: dict = {}
-            rows = await page.query_selector_all(".vin-results tr, .vehicle-data tr, table tr")
-            for row in rows:
-                cells = await row.query_selector_all("td")
-                if len(cells) >= 2:
-                    label = (await cells[0].inner_text()).strip().lower()
-                    value = (await cells[1].inner_text()).strip()
-                    if not value or value in ("-", "n/a", ""):
-                        continue
-                    if "make" in label:
-                        data["make"] = value.title()
-                    elif "model" in label:
-                        data["model"] = value
-                    elif "year" in label:
-                        data["year"] = value
-                    elif "engine" in label:
-                        data["engine"] = value
-                    elif "fuel" in label:
-                        data["fuel_type"] = value
-                    elif "transmission" in label:
-                        data["transmission"] = value
-
-            # Try WMI-based fallback decode from raw VIN characters
-            if not data.get("make"):
-                data.update(_wmi_fallback(vin))
-
-            return data
-        except PWTimeout:
-            return _wmi_fallback(vin)
-        finally:
-            await browser.close()
+    except Exception as e:
+        logger.error(f"NHTSA API Error: {e}")
+        return {}
 
 
 # ─── WMI Fallback Table ───────────────────────────────────────────────────────
