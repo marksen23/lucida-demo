@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import vin as vin_router
+from routers import carfax as carfax_router
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(name)s  %(message)s")
 
@@ -13,15 +14,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Allow all origins for free-tier Netlify frontend (restrict in production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
 app.include_router(vin_router.router, prefix="/api")
+app.include_router(carfax_router.router, prefix="/api")
 
 
 @app.get("/", tags=["health"])

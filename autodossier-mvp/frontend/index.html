@@ -76,6 +76,9 @@
         <div id="step4" class="flex items-center gap-2">
           <span class="step-icon">⏳</span> Marktpreise prüfen
         </div>
+        <div id="step5" class="flex items-center gap-2">
+          <span class="step-icon">⏳</span> Historie &amp; Unfälle prüfen
+        </div>
       </div>
       <p id="loadingMsg" class="mt-3 text-xs text-gray-500 min-h-[1.2rem]"></p>
     </div>
@@ -185,6 +188,31 @@
         </div>
         <div class="space-y-2" id="listingsList">
           <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Fahrzeughistorie -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <h4 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-1">Fahrzeughistorie</h4>
+        <p class="text-xs text-gray-500 mb-4">Gefundene Einträge in internationalen Datenbanken (Unfälle, Kilometerstände, etc.)</p>
+        <div class="grid grid-cols-2 gap-3" id="historyGrid">
+          <div class="bg-gray-800 rounded-xl p-4 flex flex-col items-center justify-center">
+            <span class="text-xs text-gray-400 mb-1">CARFAX Einträge</span>
+            <span id="carfaxCount" class="font-bold text-2xl text-white">–</span>
+          </div>
+          <div class="bg-gray-800 rounded-xl p-4 flex flex-col items-center justify-center">
+            <span class="text-xs text-gray-400 mb-1">AutoCheck Einträge</span>
+            <span id="autocheckCount" class="font-bold text-2xl text-white">–</span>
+          </div>
+        </div>
+        <div id="reportAction" class="hidden mt-4 bg-blue-950/30 border border-blue-900 rounded-xl p-4 text-center">
+          <p class="text-sm text-blue-200 mb-3">Es liegen detaillierte Historien-Daten vor.</p>
+          <button onclick="buyCarfaxReport()" id="buyReportBtn"
+            class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-sm font-semibold
+                   px-4 py-2 rounded-xl transition w-full sm:w-auto">
+            Vollständigen Report abrufen (Kostenpflichtig)
+          </button>
+          <p id="reportStatus" class="text-xs text-gray-400 mt-3"></p>
         </div>
       </div>
 

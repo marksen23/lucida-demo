@@ -1,11 +1,9 @@
 // AutoDossier – Frontend Logic
-// Adjust BACKEND_URL to your Render.com deployment URL after deploy
-const BACKEND_URL = window.BACKEND_URL || "https://autodossier-api.onrender.com";
+const BACKEND_URL = window.BACKEND_URL || "https://lucida-demo.onrender.com";
 
 // ─── Backend Wakeup (Render.com Free Tier) ────────────────────────────────────
-// Free-tier services sleep after 15 min inactivity (cold start: ~30-60s).
-// Pre-ping /health when the page loads so the backend is awake by the time
-// the user finishes entering their VIN.
+// Free-tier services sleep after 15 min inactivity (cold start ~30-60s).
+// Pre-ping /health on page load so the backend is awake when the user submits.
 
 let _backendReady = false;
 let _wakeupPromise = null;
@@ -15,7 +13,7 @@ function _wakeupBackend() {
     signal: AbortSignal.timeout(65_000),
   })
     .then(r => { if (r.ok) _backendReady = true; })
-    .catch(() => { /* silent – analysisVin() handles real errors */ });
+    .catch(() => {});
 }
 
 document.addEventListener("DOMContentLoaded", _wakeupBackend);
@@ -109,10 +107,12 @@ function renderScoreBreakdown(score) {
 // ─── Render Functions ─────────────────────────────────────────────────────────
 
 function renderResult(data) {
-  const vin_data = data.vehicle  || data.vin_data || {};  // Phase 2: "vehicle"
-  const specs    = data.specs    || {};
-  const costs    = data.costs    || {};
-  const market   = data.market   || {};
+  // Phase 2 returns "vehicle", legacy fallback to "vin_data"
+  const vin_data = data.vehicle || data.vin_data || {};
+  const specs    = data.specs   || {};
+  const costs    = data.costs   || {};
+  const market   = data.market  || {};
+  const carfax   = data.carfax  || {};
 
   // Vehicle header
   const make  = fmt(vin_data.make  || specs.make);
@@ -126,22 +126,22 @@ function renderResult(data) {
   document.getElementById("vehicleSubtitle").textContent =
     [year, trim].filter(v => v !== "–").join(" • ");
 
-  document.getElementById("statYear").textContent   = fmt(year);
-  document.getElementById("statEngine").textContent  = fmt(engine);
-  document.getElementById("statPower").textContent   = specs.power_ps ? specs.power_ps + " PS" : "–";
-  document.getElementById("statFuel").textContent    = specs.fuel_consumption ? specs.fuel_consumption + " l/100km" : "–";
+  document.getElementById("statYear").textContent  = fmt(year);
+  document.getElementById("statEngine").textContent = fmt(engine);
+  document.getElementById("statPower").textContent  = specs.power_ps ? specs.power_ps + " PS" : "–";
+  document.getElementById("statFuel").textContent   = specs.fuel_consumption ? specs.fuel_consumption + " l/100km" : "–";
 
-  // Ampel (from backend score)
-  const score = data.score || {};
-  const ampel = score.ampel || {};
+  // Ampel – use backend-computed score when available
+  const score   = data.score || {};
+  const ampel   = score.ampel || {};
   const cssClass = ampel.css || "ampel-green";
-  const dot   = document.getElementById("ampelDot");
+  const dot = document.getElementById("ampelDot");
   dot.className = "w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shadow-lg " + cssClass;
   dot.textContent = ampel.icon || "?";
   const scoreEl = document.getElementById("ampelScore");
   if (scoreEl) {
-    scoreEl.textContent = score.wert !== undefined ? score.wert + " / 100" : "";
-    scoreEl.className = "text-sm font-bold tabular-nums " +
+    scoreEl.textContent = score.wert !== undefined ? score.wert + " / 100" : "–";
+    scoreEl.className = "text-lg font-bold tabular-nums " +
       (cssClass === "ampel-green" ? "text-green-400" : cssClass === "ampel-yellow" ? "text-yellow-400" : "text-red-400");
   }
   const lbl = document.getElementById("ampelLabel");
@@ -149,20 +149,20 @@ function renderResult(data) {
     (cssClass === "ampel-green" ? "text-green-400" : cssClass === "ampel-yellow" ? "text-yellow-400" : "text-red-400");
   lbl.textContent = ampel.label || "";
 
-  // Equipment
+  // Equipment + Score Breakdown
   renderEquipment(data.equipment);
-  renderScoreBreakdown(data.score);
+  renderScoreBreakdown(score);
 
   // Specs grid
   const specFields = [
-    ["Kraftstoff",          vin_data.fuel_type  || specs.fuel_type],
-    ["Getriebe",            vin_data.transmission || specs.transmission],
-    ["Hubraum",             specs.engine_displacement],
-    ["Zylinder",            specs.cylinders],
-    ["CO₂ (g/km)",          specs.co2],
-    ["Leergewicht (kg)",    specs.curb_weight],
-    ["Höchstgeschw.",       specs.top_speed ? specs.top_speed + " km/h" : null],
-    ["0–100 km/h",          specs.acceleration ? specs.acceleration + " s" : null],
+    ["Kraftstoff",       vin_data.fuel_type    || specs.fuel_type],
+    ["Getriebe",         vin_data.transmission || specs.transmission],
+    ["Hubraum",          specs.engine_displacement],
+    ["Zylinder",         specs.cylinders],
+    ["CO₂ (g/km)",       specs.co2],
+    ["Leergewicht (kg)", specs.curb_weight],
+    ["Höchstgeschw.",    specs.top_speed ? specs.top_speed + " km/h" : null],
+    ["0–100 km/h",       specs.acceleration ? specs.acceleration + " s" : null],
   ];
   const sg = document.getElementById("specsGrid");
   sg.innerHTML = specFields
@@ -189,9 +189,9 @@ function renderResult(data) {
     costs.total_monthly ? fmtEuro(costs.total_monthly) + " / Monat" : "–";
 
   // Market prices
-  document.getElementById("avgPrice").textContent   = market.avg_price  ? fmtEuro(market.avg_price)  : "–";
-  document.getElementById("minPrice").textContent   = market.min_price  ? fmtEuro(market.min_price)  : "–";
-  document.getElementById("maxPrice").textContent   = market.max_price  ? fmtEuro(market.max_price)  : "–";
+  document.getElementById("avgPrice").textContent = market.avg_price ? fmtEuro(market.avg_price) : "–";
+  document.getElementById("minPrice").textContent = market.min_price ? fmtEuro(market.min_price) : "–";
+  document.getElementById("maxPrice").textContent = market.max_price ? fmtEuro(market.max_price) : "–";
 
   const listings = market.listings || [];
   const ll = document.getElementById("listingsList");
@@ -213,29 +213,35 @@ function renderResult(data) {
       </div>`).join("");
   }
 
-  // Show result
+  // Carfax / AutoCheck historie
+  const carfaxCount    = carfax.carfax    ?? 0;
+  const autocheckCount = carfax.autocheck ?? 0;
+  document.getElementById("carfaxCount").textContent    = carfaxCount;
+  document.getElementById("autocheckCount").textContent = autocheckCount;
+
+  if (carfaxCount > 0 || autocheckCount > 0) {
+    document.getElementById("reportAction").classList.remove("hidden");
+  } else {
+    document.getElementById("reportAction").classList.add("hidden");
+  }
+  document.getElementById("buyReportBtn").disabled = false;
+  document.getElementById("buyReportBtn").textContent = "Vollständigen Report abrufen (Kostenpflichtig)";
+  document.getElementById("reportStatus").innerHTML = "";
+
   document.getElementById("resultSection").classList.remove("hidden");
 }
 
-// ─── API Helper with 504 Retry ────────────────────────────────────────────────
+// ─── API Helper – VIN fetch mit 504-Retry ─────────────────────────────────────
 
-async function _fetchReport(vin, asking_price, mileage) {
-  let url = `${BACKEND_URL}/api/vin/${vin}`;
-  const params = new URLSearchParams();
-  if (asking_price) params.set("asking_price", asking_price);
-  if (mileage !== null && mileage !== undefined) params.set("mileage", mileage);
-  if ([...params].length) url += "?" + params.toString();
+async function _fetchReport(vin) {
+  const url = `${BACKEND_URL}/api/vin/${vin}`;
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-    });
+    const res = await fetch(url, { headers: { "Accept": "application/json" } });
 
     if (res.status === 504 && attempt === 0) {
-      // Cold-start timeout – wait briefly then retry once
       setLoadingMsg("Server gestartet, Analyse läuft erneut …");
-      setStep(1, "active"); setStep(2, ""); setStep(3, ""); setStep(4, "");
+      setStep(1, "active"); setStep(2, ""); setStep(3, ""); setStep(4, ""); setStep(5, "");
       await new Promise(r => setTimeout(r, 3_000));
       continue;
     }
@@ -256,7 +262,6 @@ async function analyzeVin() {
   const vinInput = document.getElementById("vinInput");
   const vin = vinInput.value.trim().toUpperCase().replace(/\s+/g, "");
 
-  // Basic validation
   if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) {
     document.getElementById("vinError").classList.remove("hidden");
     vinInput.focus();
@@ -264,19 +269,21 @@ async function analyzeVin() {
   }
   document.getElementById("vinError").classList.add("hidden");
 
+  window.currentVin = vin;
+
   // Reset UI
   document.getElementById("resultSection").classList.add("hidden");
   document.getElementById("errorCard").classList.add("hidden");
   document.getElementById("loadingCard").classList.remove("hidden");
   document.getElementById("analyzeBtn").disabled = true;
 
-  // Animate steps
   setStep(1, "active");
-  setStep(2, ""); setStep(3, ""); setStep(4, "");
+  setStep(2, ""); setStep(3, ""); setStep(4, ""); setStep(5, "");
+  setLoadingMsg("");
 
-  // If the backend isn't warm yet, show a hint and wait briefly
+  // If the backend isn't warm yet, wait and show a hint
   if (_wakeupPromise && !_backendReady) {
-    setLoadingMsg("Server wird gestartet (kostenloser Server, bitte ~30 Sek. warten) …");
+    setLoadingMsg("Server wird gestartet (kostenloser Server, ~30 Sek. warten) …");
     await Promise.race([
       _wakeupPromise,
       new Promise(r => setTimeout(r, 65_000)),
@@ -284,26 +291,32 @@ async function analyzeVin() {
     setLoadingMsg("");
   }
 
-  // Simulate progressive step feedback during fetch
-  const stepTimer = (step, delay) =>
-    setTimeout(() => setStep(step, "active"), delay);
-  const t2 = stepTimer(2, 2000);
-  const t3 = stepTimer(3, 5000);
-  const t4 = stepTimer(4, 8000);
+  // Progressive step animation
+  const t2 = setTimeout(() => setStep(2, "active"), 2_000);
+  const t3 = setTimeout(() => setStep(3, "active"), 4_000);
+  const t4 = setTimeout(() => setStep(4, "active"), 6_000);
+  const t5 = setTimeout(() => setStep(5, "active"), 8_000);
 
   try {
-    const data = await _fetchReport(vin);
+    // Parallel: VIN report + Carfax records (carfax is fire-and-forget, never blocks)
+    const [data, carfaxData] = await Promise.all([
+      _fetchReport(vin),
+      fetch(`${BACKEND_URL}/api/carfax/records/${vin}`, { headers: { "Accept": "application/json" } })
+        .then(r => r.ok ? r.json() : { carfax: 0, autocheck: 0 })
+        .catch(() => ({ carfax: 0, autocheck: 0 })),
+    ]);
 
-    clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
-    setStep(1, "done"); setStep(2, "done"); setStep(3, "done"); setStep(4, "done");
+    clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
+    setStep(1, "done"); setStep(2, "done"); setStep(3, "done"); setStep(4, "done"); setStep(5, "done");
+
+    data.carfax = carfaxData;
 
     document.getElementById("loadingCard").classList.add("hidden");
     renderResult(data);
 
   } catch (err) {
-    clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
+    clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
 
-    // Friendly error messages
     let msg = err.message || "Unbekannter Fehler";
     if (!navigator.onLine) {
       msg = "Keine Internetverbindung – bitte Verbindung prüfen und erneut versuchen.";
@@ -321,6 +334,49 @@ async function analyzeVin() {
   }
 }
 
+// ─── Carfax Report kaufen ─────────────────────────────────────────────────────
+
+async function buyCarfaxReport() {
+  if (!window.currentVin) return;
+  const btn    = document.getElementById("buyReportBtn");
+  const status = document.getElementById("reportStatus");
+
+  btn.disabled = true;
+  btn.textContent = "Report wird generiert …";
+  status.textContent = "Bitte warten, Report wird verarbeitet …";
+
+  try {
+    const res = await fetch(
+      `${BACKEND_URL}/api/carfax/report/${window.currentVin}/carfax`,
+      { method: "POST", headers: { "Accept": "application/json" } }
+    );
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `Fehler beim Erstellen des Reports (HTTP ${res.status})`);
+    }
+
+    const reportData = await res.json();
+
+    if (reportData.link) {
+      status.innerHTML =
+        `<a href="${reportData.link}" target="_blank" rel="noopener"
+            class="text-blue-400 font-bold underline hover:text-blue-300 text-base">
+           Hier klicken, um deinen Report zu öffnen
+         </a>`;
+      btn.textContent = "Report erfolgreich generiert!";
+    } else {
+      throw new Error("API hat keinen Link zurückgegeben.");
+    }
+  } catch (e) {
+    status.textContent = e.message;
+    btn.textContent = "Fehler – Erneut versuchen";
+    btn.disabled = false;
+  }
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+
 function resetForm() {
   document.getElementById("errorCard").classList.add("hidden");
   document.getElementById("resultSection").classList.add("hidden");
@@ -328,7 +384,6 @@ function resetForm() {
   document.getElementById("vinInput").focus();
 }
 
-// Allow pressing Enter in input
 document.getElementById("vinInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") analyzeVin();
 });
