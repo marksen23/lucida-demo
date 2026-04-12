@@ -69,7 +69,7 @@ async def get_vehicle_report(
     try:
         report = await asyncio.wait_for(
             build_report(vin, asking_price=asking_price, mileage=mileage),
-            timeout=50,
+            timeout=75,  # Render.com Free Tier benötigt bis zu 60s Cold-Start
         )
     except asyncio.TimeoutError:
         logger.error("Report-Timeout für VIN %s", vin)

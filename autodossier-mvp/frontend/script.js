@@ -2,6 +2,24 @@
 // Adjust BACKEND_URL to your Render.com deployment URL after deploy
 const BACKEND_URL = window.BACKEND_URL || "https://autodossier-api.onrender.com";
 
+// ─── Backend Wakeup (Render.com Free Tier) ────────────────────────────────────
+// Free-tier services sleep after 15 min inactivity (cold start: ~30-60s).
+// Pre-ping /health when the page loads so the backend is awake by the time
+// the user finishes entering their VIN.
+
+let _backendReady = false;
+let _wakeupPromise = null;
+
+function _wakeupBackend() {
+  _wakeupPromise = fetch(BACKEND_URL + "/health", {
+    signal: AbortSignal.timeout(65_000),
+  })
+    .then(r => { if (r.ok) _backendReady = true; })
+    .catch(() => { /* silent – analysisVin() handles real errors */ });
+}
+
+document.addEventListener("DOMContentLoaded", _wakeupBackend);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmt(value, fallback = "–") {
@@ -21,6 +39,11 @@ function setStep(n, state) {
   if (icon) {
     icon.textContent = state === "done" ? "✅" : state === "active" ? "🔄" : "⏳";
   }
+}
+
+function setLoadingMsg(text) {
+  const el = document.getElementById("loadingMsg");
+  if (el) el.textContent = text;
 }
 
 // ─── Equipment Renderer ───────────────────────────────────────────────────────
@@ -194,6 +217,39 @@ function renderResult(data) {
   document.getElementById("resultSection").classList.remove("hidden");
 }
 
+// ─── API Helper with 504 Retry ────────────────────────────────────────────────
+
+async function _fetchReport(vin, asking_price, mileage) {
+  let url = `${BACKEND_URL}/api/vin/${vin}`;
+  const params = new URLSearchParams();
+  if (asking_price) params.set("asking_price", asking_price);
+  if (mileage !== null && mileage !== undefined) params.set("mileage", mileage);
+  if ([...params].length) url += "?" + params.toString();
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+
+    if (res.status === 504 && attempt === 0) {
+      // Cold-start timeout – wait briefly then retry once
+      setLoadingMsg("Server gestartet, Analyse läuft erneut …");
+      setStep(1, "active"); setStep(2, ""); setStep(3, ""); setStep(4, "");
+      await new Promise(r => setTimeout(r, 3_000));
+      continue;
+    }
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `HTTP ${res.status}`);
+    }
+
+    return res.json();
+  }
+  throw new Error("Server antwortet nicht – bitte erneut versuchen.");
+}
+
 // ─── Main Analyze Function ────────────────────────────────────────────────────
 
 async function analyzeVin() {
@@ -218,6 +274,16 @@ async function analyzeVin() {
   setStep(1, "active");
   setStep(2, ""); setStep(3, ""); setStep(4, "");
 
+  // If the backend isn't warm yet, show a hint and wait briefly
+  if (_wakeupPromise && !_backendReady) {
+    setLoadingMsg("Server wird gestartet (kostenloser Server, bitte ~30 Sek. warten) …");
+    await Promise.race([
+      _wakeupPromise,
+      new Promise(r => setTimeout(r, 65_000)),
+    ]);
+    setLoadingMsg("");
+  }
+
   // Simulate progressive step feedback during fetch
   const stepTimer = (step, delay) =>
     setTimeout(() => setStep(step, "active"), delay);
@@ -226,28 +292,29 @@ async function analyzeVin() {
   const t4 = stepTimer(4, 8000);
 
   try {
-    const res = await fetch(`${BACKEND_URL}/api/vin/${vin}`, {
-      method: "GET",
-      headers: { "Accept": "application/json" },
-    });
+    const data = await _fetchReport(vin);
 
     clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
     setStep(1, "done"); setStep(2, "done"); setStep(3, "done"); setStep(4, "done");
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `HTTP ${res.status}`);
-    }
-
-    const data = await res.json();
 
     document.getElementById("loadingCard").classList.add("hidden");
     renderResult(data);
 
   } catch (err) {
     clearTimeout(t2); clearTimeout(t3); clearTimeout(t4);
+
+    // Friendly error messages
+    let msg = err.message || "Unbekannter Fehler";
+    if (!navigator.onLine) {
+      msg = "Keine Internetverbindung – bitte Verbindung prüfen und erneut versuchen.";
+    } else if (/Failed to fetch|NetworkError|ERR_/i.test(msg)) {
+      msg = "Verbindungsfehler – Backend nicht erreichbar. Bitte später erneut versuchen.";
+    } else if (/504|Timeout|timeout/i.test(msg)) {
+      msg = "Analyse-Timeout – der Server startet nach Inaktivität, bitte erneut versuchen.";
+    }
+
     document.getElementById("loadingCard").classList.add("hidden");
-    document.getElementById("errorMsg").textContent = err.message;
+    document.getElementById("errorMsg").textContent = msg;
     document.getElementById("errorCard").classList.remove("hidden");
   } finally {
     document.getElementById("analyzeBtn").disabled = false;
